@@ -2303,7 +2303,7 @@ def prep_paml_files(orthogroup, indir, outdir, foreground, phylogeny_file, test_
         
             
     if foreground == "aaml_blengths":
-        outfile.write("%s %s\n" % (len(seq_dic), len(rec.seq) / 3))
+        outfile.write("%s %s\n" % (len(seq_dic), int(len(rec.seq) / 3)))
     elif test_type not in ["RELAX", "aBSREL"]:
         outfile.write("%s %s\n" % (len(seq_dic), len(rec.seq)))
     for species, sequence in list(seq_dic.items()):
