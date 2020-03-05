@@ -85,11 +85,11 @@ class Gene:
 
     def aligned_alts(self, aligned_seq, start_coord):
         region_alt_dic = {}
-        for k in self.alts.keys():
+        for k in list(self.alts.keys()):
             if k >= start_coord and k < start_coord + len(aligned_seq) - aligned_seq.count("-"):
                 region_alt_dic[k-start_coord] = self.alts[k]
         aligned_vars = {}
-        for k in region_alt_dic.keys():
+        for k in list(region_alt_dic.keys()):
             new_coord = self.get_new_coord(aligned_seq, k)
             if self.strand == 1:
                 aligned_vars[new_coord] = region_alt_dic[k]
@@ -174,14 +174,14 @@ class Gene:
         #a dictionary where the indices have been adjusted to represent
         #the positions in the alignment
         region_alt_dic = {}
-        for k in self.alts.keys():
+        for k in list(self.alts.keys()):
             for cds_tuple in self.cds_coords:
                 if k >= cds_tuple[0] and k < cds_tuple[1]:
                     region_alt_dic[k] = self.alts[k]
         aligned_vars = {}
         zeroed_tuples = self.zeroed_tuples(self.cds_coords)
 #        print region_alt_dic
-        for k in region_alt_dic.keys():
+        for k in list(region_alt_dic.keys()):
             old_coord = k
             new_coord = self.new_coding_coord(aligned_seq, self.cds_coords, zeroed_tuples, old_coord)
             if self.strand == 1:
@@ -196,7 +196,7 @@ class Gene:
         #identify the closest neighbors of the gene.
         #it is currently hardcoded to identify 20 neighbors
         #but this can be adjusted to whatever
-        print self.name
+        print(self.name)
         neighbor_dic = {}
         closest_neighbors = [self.name]
         for gene in gene_list:
@@ -255,16 +255,16 @@ class Gene:
 
     def get_intron_sequence(self):
         intron_dic = collections.OrderedDict()
-        for site, nuc in self.sequence.items():
+        for site, nuc in list(self.sequence.items()):
             for intron in self.introns:
                 if site >= intron[0] and site <= intron[1]:
                     intron_dic[site] = nuc
         self.intron_dic = intron_dic
-        self.intron_seq = "".join(intron_dic.values())
+        self.intron_seq = "".join(list(intron_dic.values()))
 
     def get_first_intron_sequence(self):
         intron_dic = collections.OrderedDict()
-        for site, nuc in self.sequence.items():
+        for site, nuc in list(self.sequence.items()):
             if len(self.introns) > 0:
                 if self.strand == 1:
                     intron = self.introns[0]
@@ -273,18 +273,18 @@ class Gene:
                 if site >= intron[0] and site <= intron[1]:
                     intron_dic[site] = nuc
         self.first_intron_dic = intron_dic
-        self.first_intron_seq = "".join(intron_dic.values())
+        self.first_intron_seq = "".join(list(intron_dic.values()))
 
 
     def get_utr_sequence(self):
         utr_dic = collections.OrderedDict()
-        for site, nuc in self.sequence.items():
+        for site, nuc in list(self.sequence.items()):
             for utr in self.three_utrs:
                 if site >= utr[0] and site <= utr[1]:
                     utr_dic[site] = nuc
         self.utr3_dic = utr_dic
         utr_dic = collections.OrderedDict()
-        for site, nuc in self.sequence.items():
+        for site, nuc in list(self.sequence.items()):
             for utr in self.five_utrs:
                 if site >= utr[0] and site <= utr[1]:
                     utr_dic[site] = nuc
@@ -292,7 +292,7 @@ class Gene:
 
     def get_flank_sequence(self, flank_size):
         flank_dic = collections.OrderedDict()
-        for site, nuc in self.sequence.items():
+        for site, nuc in list(self.sequence.items()):
             if self.strand == 1:
                 if site < self.start:
                     flank_dic[site] = nuc
@@ -300,11 +300,11 @@ class Gene:
                 if site > self.end:
                     flank_dic[site] = nuc
         self.flank_dic = flank_dic
-        self.flank_seq = "".join(flank_dic.values())
+        self.flank_seq = "".join(list(flank_dic.values()))
     
     def get_cds_sequence(self):#, seq_dic):
         cds_dic = collections.OrderedDict()
-        for site, nuc in self.sequence.items():
+        for site, nuc in list(self.sequence.items()):
             for exon in self.cds_coords:
                 if site >= exon[0] and site <= exon[1]:
                     cds_dic[site] = nuc
@@ -325,8 +325,8 @@ class Gene:
         first_intron_subs = 0
         utr3_subs = 0
         utr5_subs = 0
-        for index in self.alts.keys():
-            if index in self.flank_dic.keys():
+        for index in list(self.alts.keys()):
+            if index in list(self.flank_dic.keys()):
                 if len(self.alts[index]) != len(self.refs[index]):
                     continue
                 for x in range(len(self.alts[index])):
@@ -335,25 +335,25 @@ class Gene:
                     if str(self.alts[index])[x] != str(self.refs[index])[x]:
                         self.flank_sub_coords.append(index)
                         flank_subs += 1
-            if index in self.intron_dic.keys():
+            if index in list(self.intron_dic.keys()):
                 for x in range(len(self.alts[index])):
                     if x > len(self.refs[index]) - 1:
                         break
                     if str(self.alts[index])[x] != str(self.refs[index])[x]:
                         intron_subs += 1
-            if index in self.first_intron_dic.keys():
+            if index in list(self.first_intron_dic.keys()):
                 for x in range(len(self.alts[index])):
                     if x > len(self.refs[index]) - 1:
                         break
                     if str(self.alts[index])[x] != str(self.refs[index])[x]:
                         first_intron_subs += 1            
-            if index in self.utr3_dic.keys():                
+            if index in list(self.utr3_dic.keys()):                
                 for x in range(len(self.alts[index])):
                     if x > len(self.refs[index]) - 1:
                         break
                     if str(self.alts[index])[x] != str(self.refs[index])[x]:
                         utr3_subs += 1
-            if index in self.utr5_dic.keys():                
+            if index in list(self.utr5_dic.keys()):                
                 for x in range(len(self.alts[index])):
                     if x > len(self.refs[index]) - 1:
                         break
@@ -379,10 +379,10 @@ class Gene:
         hi_impact_coords = []
         fourf_coords = []
         aa_types_dic = changes.aa_types()
-        for index in self.alts.keys():
+        for index in list(self.alts.keys()):
             old_codon = ""
             new_codon = []
-            if index in self.cds.keys():
+            if index in list(self.cds.keys()):
                 if len(self.alts[index]) != len(self.refs[index]):
                     nsyn_count += 1
                     continue
@@ -390,7 +390,7 @@ class Gene:
                 #########TODO: Do unit tests of all lengths of alts genotypes at all locations within codons (1-3). Many of these have been done but should do systematically.
 #                print self.alts[index]
                 if self.strand == 1:
-                    cds_index = self.cds.keys().index(index)
+                    cds_index = list(self.cds.keys()).index(index)
 
                     if cds_index + variant_len >= len(self.cds):
                         variant_len = len(self.cds) - cds_index - 1 
@@ -403,7 +403,7 @@ class Gene:
                         additional_len += 3
                     for x in range(3+additional_len):
                         new_index = codon_start + x
-                        new_index = self.cds.keys()[new_index]
+                        new_index = list(self.cds.keys())[new_index]
                         old_codon += self.cds[new_index]
                         new_codon.append(self.cds[new_index])
                     for x in range(variant_len):
@@ -414,7 +414,7 @@ class Gene:
                 elif self.strand == -1:
 #                    print self.cds
 
-                    cds_index = len(self.cds.keys()) - 1 - self.cds.keys().index(index) + 1 - (variant_len % 3)
+                    cds_index = len(list(self.cds.keys())) - 1 - list(self.cds.keys()).index(index) + 1 - (variant_len % 3)
 
 #                    print index
 #                    print len(self.cds.keys())
@@ -426,7 +426,7 @@ class Gene:
                     if cds_index - variant_len < 0:
                         variant_len = cds_index
                         self.alts[index] = str(self.alts[index])[0:variant_len]
-                    codon_start = len(self.cds.keys()) - 1 - cds_index + (cds_index % 3) + ((variant_len / 3) * 3)
+                    codon_start = len(list(self.cds.keys())) - 1 - cds_index + (cds_index % 3) + ((variant_len / 3) * 3)
 #                    codon_start = 
                     leftover_len = variant_len - (3 - cds_index % 3)
 #                    print "leftover: %s" % leftover_len
@@ -437,7 +437,7 @@ class Gene:
                     for x in range(3 + additional_len):
                         new_index = codon_start - x
                             
-                        new_index = self.cds.keys()[new_index]
+                        new_index = list(self.cds.keys())[new_index]
                         old_codon += self.cds[new_index]
                         new_codon.append(self.cds[new_index])
                     for x in range(variant_len):
@@ -531,7 +531,7 @@ class Gene:
         return self.average_n
         size_sum = 0
         num_sites = 0
-        for site in target_dic.keys():
+        for site in list(target_dic.keys()):
             num_sites += 1
             size_sum += self.called_counts[site]
         if num_sites == 0:
@@ -547,7 +547,7 @@ class Gene:
         try:
             reader = vcf_reader.fetch(self.scaf, self.flank_start, self.flank_end)
         except ValueError:
-            print "can't get that bit of vcf"
+            print("can't get that bit of vcf")
             self.alts = {}
             self.refs = {}
             self.called_counts = {}
@@ -586,7 +586,7 @@ class Gene:
 
         #if you need exact counts of sample numbers, use this
 #        self.called_counts = called_count
-        if len(called_count.values()) == 0:
+        if len(list(called_count.values())) == 0:
             self.average_n = 0
 #        elif "LALB" in self.name:
 #            self.average_n = round(1.0 * sum(called_count.values()) / len(called_count.values()))
@@ -598,7 +598,7 @@ class Gene:
         self.sample_gts = gene_sample_dic
         self.syn_and_nsyn()
         cds_sample = []
-        for site in self.cds.keys():
+        for site in list(self.cds.keys()):
             if called_count.get(site, None) != None:
                 cds_sample.append(called_count[site])
             else:
@@ -626,9 +626,9 @@ class Gene:
         sample_syn_genod = {}
         sample_low_genod = {}
         sample_hi_genod = {}
-        for position, gt_dic in self.sample_gts.items():
+        for position, gt_dic in list(self.sample_gts.items()):
             if position in self.nsyn_coords:
-                for sample, gt in gt_dic.items():
+                for sample, gt in list(gt_dic.items()):
                     if sample_nsyn_counts.get(sample, None) == None:
                         sample_nsyn_counts[sample] = 0
                         sample_nsyn_genod[sample] = 0
@@ -649,7 +649,7 @@ class Gene:
                         elif position in self.hi_impact_coords:
                             sample_hi_genod[sample] += 1
             elif position in self.syn_coords:
-                for sample, gt in gt_dic.items():
+                for sample, gt in list(gt_dic.items()):
                     if sample_syn_counts.get(sample, None) == None:
                         sample_syn_counts[sample] = 0
                         sample_syn_genod[sample] = 0
@@ -671,7 +671,7 @@ class Gene:
     def potential_sites(self):
         potent_dic = changes.potent_dic()
         fourfold_list = changes.fourfold_codons()
-        cur_cds = "".join(self.cds.values())
+        cur_cds = "".join(list(self.cds.values()))
         if self.strand == -1:
             cur_cds = str(Seq.Seq(cur_cds).reverse_complement())
         x = 0

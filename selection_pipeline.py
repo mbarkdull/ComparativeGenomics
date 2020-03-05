@@ -61,7 +61,7 @@ LASIOGLOSSUM = ["LLEU", "LMAR", "LFIG", "LZEP", "LVIE", "LALB", "LCAL", "LMAL", 
 def main():
     if not os.path.isdir(options.base_dir):
         os.mkdir(options.base_dir) #create working directory
-    print options.action
+    print(options.action)
 
     if options.action == "write_orthos":
         cds_dic = utils.read_params(options.param_file)
@@ -72,8 +72,8 @@ def main():
             utils.write_orthos(options.ortho_file, seq_dic, "%s/%s_orthos" % (options.base_dir, options.prefix), index_file)
         else:
             utils.write_orthoparagroups(ortho_dic, seq_dic, "%s/%s_orthos" % (options.base_dir, options.prefix), index_file, options.min_taxa)
-        print "Orthogroups written to %s/%s_orthos" % (options.base_dir, options.prefix)
-        print "Exiting"
+        print("Orthogroups written to %s/%s_orthos" % (options.base_dir, options.prefix))
+        print("Exiting")
         sys.exit()
 
     if options.action == "write_ncars":
@@ -102,26 +102,26 @@ def main():
         og_list = utils.read_ortho_index(index_file, options.min_taxa, paras_allowed) #Gets list of OGs that meet minimum taxa requirement. If paras_allowed is False then will not return any OGs with any paralogs in them.
         iscoding = True
         utils.fsa_coding_align(og_list, "%s/%s_orthos/" % (options.base_dir, options.prefix), "%s/%s_fsa_coding" % (options.base_dir, options.prefix), options.num_threads, iscoding)
-        print "Orthogroups aligned using FSA and output written to %s/%s_fsa_coding" % (options.base_dir, options.prefix)
+        print("Orthogroups aligned using FSA and output written to %s/%s_fsa_coding" % (options.base_dir, options.prefix))
         paras_allowed = False
-        og_list = utils.read_ortho_index(index_file, len(cds_dic.keys()), paras_allowed) #Gets only those OGs that have a single sequence for every species in the study. This is for making a sequence matrix that can be used for phylogenetics.
-        utils.concatenate_for_raxml("%s/%s_fsa_coding" % (options.base_dir, options.prefix), "%s/%s.afa" % (options.base_dir, options.prefix), og_list, cds_dic.keys())
-        print "If you would like to run a phylogenetic analysis, a concatenated amino acid sequence matrix of all orthogroups including all %s of the species in your study has been written to %s/%s.afa" % (len(cds_dic.keys()), options.base_dir, options.prefix)
-        print "Exiting"
+        og_list = utils.read_ortho_index(index_file, len(list(cds_dic.keys())), paras_allowed) #Gets only those OGs that have a single sequence for every species in the study. This is for making a sequence matrix that can be used for phylogenetics.
+        utils.concatenate_for_raxml("%s/%s_fsa_coding" % (options.base_dir, options.prefix), "%s/%s.afa" % (options.base_dir, options.prefix), og_list, list(cds_dic.keys()))
+        print("If you would like to run a phylogenetic analysis, a concatenated amino acid sequence matrix of all orthogroups including all %s of the species in your study has been written to %s/%s.afa" % (len(list(cds_dic.keys())), options.base_dir, options.prefix))
+        print("Exiting")
         sys.exit()
 
     if options.action == "fourfold_matrix":
         cds_dic = utils.read_params(options.param_file)
         index_file = "%s/%s_ortho.index" % (options.base_dir, options.prefix)
         paras_allowed = False
-        og_list = utils.read_ortho_index(index_file, len(cds_dic.keys()), paras_allowed) #Gets only those OGs that have a single sequence for every species in the study. This is for making a sequence matrix that can be used for phylogenetics.
-        utils.concatenate_fourf_for_raxml("%s/%s_gene_ancestral" % (options.base_dir, options.prefix), "%s/%s_fourfold.afa" % (options.base_dir, options.prefix), og_list, cds_dic.keys())
+        og_list = utils.read_ortho_index(index_file, len(list(cds_dic.keys())), paras_allowed) #Gets only those OGs that have a single sequence for every species in the study. This is for making a sequence matrix that can be used for phylogenetics.
+        utils.concatenate_fourf_for_raxml("%s/%s_gene_ancestral" % (options.base_dir, options.prefix), "%s/%s_fourfold.afa" % (options.base_dir, options.prefix), og_list, list(cds_dic.keys()))
         sys.exit()
 
     if options.action == "align_ncars":
         iscoding = False
         ortho_dic = utils.ncar_ortho_dic(options.ncar_ortho_file, options.min_taxa) #this needs to be "filtered_loci.index" from the NCAR pipeline
-        ncar_list = ortho_dic.keys()
+        ncar_list = list(ortho_dic.keys())
         utils.fsa_ncar_align(ncar_list, "%s/%s_ncars" % (options.base_dir, options.prefix), "%s/%s_fsa_ncar" % (options.base_dir, options.prefix), options.num_threads, iscoding)
         sys.exit()
         
@@ -129,7 +129,7 @@ def main():
         test_type = "ancestral"
         foreground = "ncar"
         ortho_dic = utils.ncar_ortho_dic(options.ncar_ortho_file, options.min_taxa)
-        ncar_list = ortho_dic.keys()
+        ncar_list = list(ortho_dic.keys())
 #        ncar_list = [10510, 10513, 17170, 17388, 17389, 23400]
         utils.paml_test(ncar_list, foreground, test_type,"%s/%s_fsa_ncar" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, test_type), options.tree_file, options.num_threads, options.use_gblocks, options.min_taxa, [])
         sys.exit()
@@ -233,15 +233,15 @@ def main():
         paras_allowed = True
         og_list = utils.read_ortho_index(index_file, options.min_taxa, paras_allowed)
         utils.alignment_column_filtering("%s/%s_fsa_coding" % (options.base_dir, options.prefix), "%s/%s_fsa_coding_columnfilt" % (options.base_dir, options.prefix), og_list, options.nogap_min_count, options.nogap_min_prop, options.nogap_min_species, {}, options.num_threads)
-        print "First iteration of column filtering done. Results written to %s/%s_fsa_coding_columnfilt" % (options.base_dir, options.prefix)
-        print "Starting Jarvis filter."
+        print("First iteration of column filtering done. Results written to %s/%s_fsa_coding_columnfilt" % (options.base_dir, options.prefix))
+        print("Starting Jarvis filter.")
         utils.jarvis_filtering(og_list, "%s/%s_fsa_coding_columnfilt" % (options.base_dir, options.prefix), "%s/%s_fsa_coding_jarvis" % (options.base_dir, options.prefix), options.min_cds_len, options.num_threads)
-        print "Jarvis filtering done. Results written to %s/%s_fsa_coding_jarvis" % (options.base_dir, options.prefix)
+        print("Jarvis filtering done. Results written to %s/%s_fsa_coding_jarvis" % (options.base_dir, options.prefix))
         utils.alignment_column_filtering("%s/%s_fsa_coding_jarvis" % (options.base_dir, options.prefix), "%s/%s_fsa_coding_jarvis_columnfilt" % (options.base_dir, options.prefix), og_list, options.nogap_min_count, options.nogap_min_prop, options.nogap_min_species, {}, options.num_threads)
-        print "Second iteration of column filtering done. Results written to %s/%s_fsa_coding_jarvis_columnfilt" % (options.base_dir, options.prefix)
+        print("Second iteration of column filtering done. Results written to %s/%s_fsa_coding_jarvis_columnfilt" % (options.base_dir, options.prefix))
         utils.sequence_gap_filtering("%s/%s_fsa_coding_jarvis_columnfilt" % (options.base_dir, options.prefix), "%s/%s_fsa_coding_jarvis_columnfilt_seqfilt" % (options.base_dir, options.prefix), "%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), "%s/%s_orthos" % (options.base_dir, options.prefix), og_list, options.min_seq_prop_kept, options.max_seq_prop_gap, options.min_cds_len, "%s/%s_filtered.index" % (options.base_dir, options.prefix))
-        print "Filtering of whole sequences based on gap content done. Results written to %s/%s_fsa_coding_jarvis_columnfilt_seqfilt" % (options.base_dir, options.prefix)
-        print "Exiting"
+        print("Filtering of whole sequences based on gap content done. Results written to %s/%s_fsa_coding_jarvis_columnfilt_seqfilt" % (options.base_dir, options.prefix))
+        print("Exiting")
         sys.exit()
 
     if options.action == "rer_converge":
@@ -250,7 +250,7 @@ def main():
         exclude_paras = True
         manda_taxa, multi_taxa, remove_list = utils.make_taxa_dic(options.taxa_inclusion)
         og_list = utils.min_taxa_membership(manda_taxa, multi_taxa, remove_list, "%s/%s_filtered.index" % (options.base_dir, options.prefix), options.min_taxa, exclude_paras)
-        print len(og_list)
+        print(len(og_list))
         utils.paml_test(og_list, foreground, test_type,"%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, options.outputfile.split(".")[0]), options.tree_file, options.num_threads, options.use_gblocks, options.min_taxa, remove_list)
         utils.read_aaml_phylos(og_list, "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, options.outputfile.split(".")[0]), "%s/aaml_compiled" % (options.base_dir), options.outputfile, options.min_taxa)
         sys.exit()
@@ -261,7 +261,7 @@ def main():
         manda_taxa, multi_taxa, remove_list = utils.make_taxa_dic(options.taxa_inclusion)
         ncar_list = utils.ncar_min_taxa_membership(manda_taxa, multi_taxa, remove_list, "%s/%s_ncar_ortho.index" % (options.base_dir, options.prefix), options.min_taxa, exclude_paras)
 
-        print len(ncar_list)
+        print(len(ncar_list))
 #        ncar_list = ["ce99895"]
         utils.baseml_blengths(ncar_list, "%s/%s_fsa_ncar" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, options.outputfile.split(".")[0]), options.tree_file, options.num_threads, remove_list)
         utils.read_baseml_phylos(ncar_list, "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, options.outputfile.split(".")[0]), "%s/baseml_compiled" % (options.base_dir), options.outputfile)
@@ -330,7 +330,7 @@ def main():
         
             og_list = utils.min_taxa_membership(manda_taxa, multi_taxa, remove_list, "%s/%s_filtered.index" % (options.base_dir, options.prefix), options.min_taxa, exclude_paras)
 
-        print len(og_list)
+        print(len(og_list))
         if options.foreground == "INTREE":
             fore_list = "INTREE"
 #            cur_og_list = og_list
@@ -339,7 +339,7 @@ def main():
         else:
             fore_list = options.foreground.split(",")
 #        og_list = [10724, 11488, 12704, 13036, 13879, 15282]
-        print options.foreground
+        print(options.foreground)
         utils.paml_test(og_list, fore_list, test_type, "%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, options.foreground, test_type), options.tree_file, options.num_threads, options.use_gblocks, options.min_taxa, remove_list)
         utils.read_hyphy_relax(og_list, "%s/%s_%s_%s" % (options.base_dir, options.prefix, options.foreground, test_type), options.base_dir, options.foreground)
         sys.exit()
@@ -360,7 +360,7 @@ def main():
             og_list = utils.min_taxa_membership(manda_taxa, multi_taxa, remove_list, "%s/%s_filtered.index" % (options.base_dir, options.prefix), options.min_taxa, exclude_paras)
 
         
-        print len(og_list)
+        print(len(og_list))
 #        print og_list[0:10]
         og_list = utils.limit_list(og_list, options.min_og_group, options.max_og_group)
 #        og_list = og_list[0:10]
@@ -385,7 +385,7 @@ def main():
         
         ncar_list = utils.ncar_min_taxa_membership(manda_taxa, multi_taxa, remove_list, "%s/%s_ncar_ortho.index" % (options.base_dir, options.prefix), options.min_taxa, exclude_paras)
         ncar_list = utils.limit_list_ncars(ncar_list, options.min_og_group, options.max_og_group)
-        print len(ncar_list)
+        print(len(ncar_list))
 #        ncar_list = ["ce128829"]
 #        ncar_list = ncar_list[0:10]
 #        print ncar_list
@@ -428,7 +428,7 @@ def main():
         exclude_paras = True
         manda_taxa, multi_taxa, remove_list = utils.make_taxa_dic(options.taxa_inclusion)
         og_list = utils.min_taxa_membership(manda_taxa, multi_taxa, remove_list, "%s/%s_filtered.index" % (options.base_dir, options.prefix), options.min_taxa, exclude_paras)
-        print len(og_list)
+        print(len(og_list))
 #        og_list = utils.read_ortho_index(index_file, options.min_taxa, paras_allowed)
         utils.yn_estimates(og_list, "%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), "%s/%s_yn" % (options.base_dir, options.prefix), options.tree_file, options.min_taxa, options.use_gblocks, remove_list)
         sys.exit()
@@ -454,7 +454,7 @@ def main():
                 og_list.append(cur_og)
         else:
             og_list = utils.min_taxa_membership(manda_taxa, multi_taxa, remove_list, "%s/%s_filtered.index" % (options.base_dir, options.prefix), options.min_taxa, exclude_paras)
-        print len(og_list)
+        print(len(og_list))
 #        og_list = utils.read_ortho_index(index_file, options.min_taxa, paras_allowed)
 
         utils.paml_test(og_list, foreground, test_type,"%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, test_type), options.tree_file, options.num_threads, options.use_gblocks, options.min_taxa, remove_list)
@@ -468,10 +468,10 @@ def main():
         cds_dic = utils.read_params(options.param_file)
         index_file = "%s/%s_ortho_noparas.index" % (options.base_dir, options.prefix)
         paras_allowed = False
-        og_list = utils.read_ortho_index(index_file, len(cds_dic.keys()), paras_allowed) #Gets only those OGs that have a single sequence for every species in the study. This is for making a sequence matrix that can be used for phylogenetics.
-        og_list = utils.aligned_og_completeness(og_list, "%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), len(cds_dic.keys()))
+        og_list = utils.read_ortho_index(index_file, len(list(cds_dic.keys())), paras_allowed) #Gets only those OGs that have a single sequence for every species in the study. This is for making a sequence matrix that can be used for phylogenetics.
+        og_list = utils.aligned_og_completeness(og_list, "%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), len(list(cds_dic.keys())))
         og_list = og_list[0:10]
-        utils.paml_test(og_list, foreground, test_type,"%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, options.outputfile.split(".")[0]), options.tree_file, options.num_threads, options.use_gblocks, len(cds_dic.keys()), [])
+        utils.paml_test(og_list, foreground, test_type,"%s/%s_fsa_coding_jarvis_columnfilt_seqfilt_noparas" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, options.outputfile.split(".")[0]), options.tree_file, options.num_threads, options.use_gblocks, len(list(cds_dic.keys())), [])
 #        utils.paml_test(og_list, foreground, test_type,"%s/%s_fsa_coding" % (options.base_dir, options.prefix), "%s/%s_%s_%s" % (options.base_dir, options.prefix, foreground, test_type), options.tree_file, options.num_threads, options.use_gblocks)
 #        utils.concatenate_fourf_for_raxml("%s/%s_gene_ancestral" % (options.base_dir, options.prefix), "%s/%s_fourfold.afa" % (options.base_dir, options.prefix), og_list, cds_dic.keys())
         sys.exit()
@@ -629,31 +629,31 @@ def main():
     if options.action == "autism_enrich":
 #        utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_free_free_results/soc_larger.txt" % (options.base_dir, options.prefix), ortho_dic)
 #        utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_lasihali_bs.lrt" % (options.base_dir, options.prefix), ortho_dic)
-        print "\nAbdomen sigs"
+        print("\nAbdomen sigs")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/expression/abd_sigs.txt" % (options.base_dir), ortho_dic, -9)
-        print "\nAntennae sigs"
+        print("\nAntennae sigs")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/expression/ant_sigs.txt" % (options.base_dir), ortho_dic, -9)
-        print "\nHead sigs"
+        print("\nHead sigs")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/expression/head_sigs.txt" % (options.base_dir), ortho_dic, -9)
-        print "\nSolitary marine 250"
+        print("\nSolitary marine 250")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/marine_tests_sol.txt" % (options.base_dir, options.prefix), ortho_dic, 250)
-        print "\nSolitary marine 100"
+        print("\nSolitary marine 100")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/marine_tests_sol.txt" % (options.base_dir, options.prefix), ortho_dic, 100)
-        print "\nSocial marine 250"
+        print("\nSocial marine 250")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/marine_tests_soc.txt" % (options.base_dir, options.prefix), ortho_dic, 250)
-        print "\nSocial marine 100"
+        print("\nSocial marine 100")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/marine_tests_soc.txt" % (options.base_dir, options.prefix), ortho_dic, 100)
-        print "\nSlower social Clark significant"
+        print("\nSlower social Clark significant")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/soc_slower_clark.txt" % (options.base_dir, options.prefix), ortho_dic, -1)
-        print "\nFaster social Clark significant"
+        print("\nFaster social Clark significant")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/soc_faster_clark.txt" % (options.base_dir, options.prefix), ortho_dic, -1)
-        print "\nSlower solitary Clark significant"
+        print("\nSlower solitary Clark significant")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/sol_slower_clark.txt" % (options.base_dir, options.prefix), ortho_dic, -1)
-        print "\nFaster solitary Clark significant"
+        print("\nFaster solitary Clark significant")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/sol_faster_clark.txt" % (options.base_dir, options.prefix), ortho_dic, -1)
-        print "\nAll solitary Clark significant"
+        print("\nAll solitary Clark significant")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/sol_sig_clark.txt" % (options.base_dir, options.prefix), ortho_dic, -1)
-        print "\nAll social Clark significant"
+        print("\nAll social Clark significant")
         utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/%s_aaml_blengths_aaml_blengths_results/soc_sig_clark.txt" % (options.base_dir, options.prefix), ortho_dic, -1)
         pairs_list = [("LMAR", "LFIG"), ("LZEP", "LVIE"), ("LPAU", "LOEN"), ("AAUR", "APUR")]
 #        for pair in pairs_li
@@ -667,7 +667,7 @@ def main():
         pairs_list = [("LMAR", "LFIG"), ("LZEP", "LVIE"), ("LPAU", "LOEN"), ("AAUR", "APUR")]
         for pair in pairs_list:
             outlier_num = 100
-            print pair
+            print(pair)
             utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/hka_tests/%s_%s_flank_hka_direct_pairwise_results_correct_slower.txt" % (options.base_dir, pair[0], pair[1]), ortho_dic, outlier_num)
             utils.hypergeom("/Genomics/kocherlab/berubin/annotation/autism/LALB_human_bestreciprocal.txt", "/Genomics/kocherlab/berubin/annotation/autism/LALB_sfaris.txt", "%s/hka_tests/%s_%s_flank_hka_direct_pairwise_results_correct_slower.txt" % (options.base_dir, pair[1], pair[0]), ortho_dic, outlier_num)
 #        for terminal in ["LVIE", "LZEP", "LPAU", "LOEN", "LMAR", "LMAL", "LLEU", "LFIG", "HLIG", "AAUR", "APUR"]:

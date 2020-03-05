@@ -20,7 +20,7 @@ from Bio import Seq
 from Gene import Gene
 from NCAR import NCAR
 from gff import gffParser
-import cPickle as pickle
+import pickle as pickle
 import shutil
 import subprocess
 from glob import glob
@@ -32,7 +32,7 @@ from scipy.stats import chisqprob
 import statsmodels.stats.multitest as smm # this is required for a lot of stuff but is taking forever to load
 from Bio.SeqRecord import SeqRecord
 from Bio import AlignIO
-from StringIO import StringIO
+from io import StringIO
 import datetime
 import scipy.stats
 
@@ -62,7 +62,7 @@ def read_orthofile(orthoformat, ortho_file):
     elif orthoformat == "proteinortho":
         ortho_dic = ortho_reader(ortho_file)
     else:
-        print "Unknown orthogroup file format. Please specify orthofinder, orthomcl, or proteinortho format using the -w option."
+        print("Unknown orthogroup file format. Please specify orthofinder, orthomcl, or proteinortho format using the -w option.")
         sys.exit()
     return ortho_dic
 
@@ -86,7 +86,7 @@ def ortho_reader(orthofile):
             if gene == "*":
                 continue
             cur_species = gene[0:4]
-            if cur_species not in gene_dic.keys():
+            if cur_species not in list(gene_dic.keys()):
                 gene_dic[cur_species] = []
                 
             gene_dic[cur_species].append(gene)
@@ -108,7 +108,7 @@ def orthomcl_reader(orthofile):
         cur_og = int(cur_line[0].split("_")[1][:-1])
         for gene in cur_line[1:]:
             cur_species = gene.split("|")[1][0:4]
-            if cur_species not in gene_dic.keys():
+            if cur_species not in list(gene_dic.keys()):
                 gene_dic[cur_species] = []
                 
             gene_dic[cur_species].append(gene.split("|")[1])
@@ -133,7 +133,7 @@ def orthofinder_reader(orthofile):
             continue #skip orthogroups with a single sequence
         for gene in cur_line[1:]:
             cur_species = gene[0:4]
-            if cur_species not in gene_dic.keys():
+            if cur_species not in list(gene_dic.keys()):
                 gene_dic[cur_species] = []
                 
             gene_dic[cur_species].append(gene)
@@ -162,17 +162,17 @@ def write_ncars(ortho_dic, seq_dic, outdir, min_taxa, filtered_ortho_file):
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
     new_orthos = open(filtered_ortho_file, 'w')
-    for ncar_num, ncar_seqs in ortho_dic.items():
+    for ncar_num, ncar_seqs in list(ortho_dic.items()):
         outfile = open("%s/ncar_%s.fasta" % (outdir, ncar_num), 'w')
         new_seq_list = []
         good_count = 0
-        for species, seq in ncar_seqs.items():
+        for species, seq in list(ncar_seqs.items()):
             if len(seq_dic[species][seq]) < 1000:
                 if len(seq_dic[species][seq].replace("N","").replace("n","")) >= 250:
                     good_count += 1
         if good_count < min_taxa:
             continue
-        for species, seq in ncar_seqs.items():
+        for species, seq in list(ncar_seqs.items()):
             if len(seq_dic[species][seq]) < 1000:
                 if len(seq_dic[species][seq].replace("N","").replace("n","")) >= 250:
                     outfile.write(">%s\n%s\n" % (seq, seq_dic[species][seq]))
@@ -185,16 +185,16 @@ def write_ncar_cnees(ortho_dic, seq_dic, outdir, min_taxa, filtered_ortho_file):
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
     new_orthos = open(filtered_ortho_file, 'w')
-    for ncar_num, ncar_seqs in ortho_dic.items():
+    for ncar_num, ncar_seqs in list(ortho_dic.items()):
         outfile = open("%s/ncar_%s.fasta" % (outdir, ncar_num), 'w')
         new_seq_list = []
         good_count = 0
-        for species, seq in ncar_seqs.items():
+        for species, seq in list(ncar_seqs.items()):
             if len(seq_dic[species][seq].replace("N","").replace("n","")) >= 100:
                     good_count += 1
         if good_count < min_taxa:
             continue
-        for species, seq in ncar_seqs.items():
+        for species, seq in list(ncar_seqs.items()):
             if len(seq_dic[species][seq].replace("N","").replace("n","")) >= 100:
                     outfile.write(">%s\n%s\n" % (seq, seq_dic[species][seq]))
                     new_seq_list.append(seq)
@@ -206,8 +206,8 @@ def write_ncar_cnees(ortho_dic, seq_dic, outdir, min_taxa, filtered_ortho_file):
 def get_og_num(query_gene, ortho_dic):
     species = query_gene[0:4]
 #    query_gene = query_gene + "-RA"
-    for og_num, species_dic in ortho_dic.items():
-        if species in species_dic.keys():
+    for og_num, species_dic in list(ortho_dic.items()):
+        if species in list(species_dic.keys()):
             if query_gene in species_dic[species]:
                 
                 return og_num
@@ -215,8 +215,8 @@ def get_og_num(query_gene, ortho_dic):
 
 def make_og_gene_map(ortho_dic):
     og_map = {}
-    for og_num, species_dic in ortho_dic.items():
-        for species, genes in species_dic.items():
+    for og_num, species_dic in list(ortho_dic.items()):
+        for species, genes in list(species_dic.items()):
             for gene in genes:
                 og_map[gene[0:-3]] = og_num
     return og_map
@@ -243,7 +243,7 @@ def harvest_ncar_worker(attribute_list):
         reader = vcf_reader.fetch(cur_ncar.scaf, cur_ncar.start, cur_ncar.end)
         cur_ncar.get_genotypes(vcf_reader, 0)
     except ValueError:
-        print "can't get that bit of vcf: %s" % cur_ncar.name
+        print("can't get that bit of vcf: %s" % cur_ncar.name)
         cur_ncar.alts = {}
         cur_ncar.refs = {}
         cur_ncar.called_counts = {}
@@ -255,21 +255,21 @@ def get_species_ncar_data(target_species, num_threads, basedir, ncar_gff, genome
 #    if os.path.exists("%s/%s_cnee_vcf_dic.pickle" % (pickle_dir, target_species)):
 #    if os.path.exists("%s/%s_ncar_vcf_dic.pickle" % (pickle_dir, target_species)):
     if os.path.exists("%s/%s_cactusncar_vcf_dic.pickle" % (pickle_dir, target_species)):
-        print "%s NCAR pickle exists" % target_species
+        print("%s NCAR pickle exists" % target_species)
         return
-    print "Building %s NCAR pickle" % target_species
+    print("Building %s NCAR pickle" % target_species)
     seq_dic = {}
     reader = SeqIO.parse(genome_fasta, format = 'fasta')
     for rec in reader:
         seq_dic[rec.id] = str(rec.seq)
-    print "genome read"
+    print("genome read")
     all_ncars_list = []
-    for og_num, ncar_dic in ortho_dic.items():
+    for og_num, ncar_dic in list(ortho_dic.items()):
 #        all_ncars_list = all_ncars_list + ncar_dic[target_species]
         if not ncar_dic.get(target_species, None) == None:
             all_ncars_list.append(ncar_dic[target_species])
     gff_file = open(ncar_gff, 'rU')
-    print "read gff"
+    print("read gff")
     ncar_list = []
     pool = multiprocessing.Pool(processes = num_threads)
     work_list = []
@@ -287,8 +287,8 @@ def get_species_ncar_data(target_species, num_threads, basedir, ncar_gff, genome
         cur_name = cur_line[8].split(";")[0].split("ID=")[1]
         if cur_name not in all_ncars_list:
             if cur_name == "LZEP:LZEP_chr_4:13156535:13156885:+":
-                print "lost to all_ncars_list"
-            print "not in orthodic: %s" % cur_name
+                print("lost to all_ncars_list")
+            print("not in orthodic: %s" % cur_name)
             continue
 #####TURN THIS ON IF DOING NCARS
 #        if cur_end - cur_start > 1000:
@@ -306,19 +306,19 @@ def get_species_ncar_data(target_species, num_threads, basedir, ncar_gff, genome
     pool.join()
     neighbor_work = []
     for ncar in ncar_list:
-        ncar.set_neighbors(gene_dic.values())
-    print "ncar data gotten"
-    print str(datetime.datetime.now())
-    print len(ncar_list)
+        ncar.set_neighbors(list(gene_dic.values()))
+    print("ncar data gotten")
+    print(str(datetime.datetime.now()))
+    print(len(ncar_list))
     all_samples = []
     ncar_objects = {}
     for ncar in ncar_list:
         ncar_objects[ncar.name] = ncar
-        for sample_dic in ncar.sample_gts.values():
-            for sample in sample_dic.keys():
+        for sample_dic in list(ncar.sample_gts.values()):
+            for sample in list(sample_dic.keys()):
                 all_samples.append(sample)
             all_samples = list(set(all_samples))
-    print "Dumping %s pickle" % target_species
+    print("Dumping %s pickle" % target_species)
 #    pickle_file = open("%s/%s_cnee_vcf_dic.pickle" % (pickle_dir, target_species), 'wb')
     pickle_file = open("%s/%s_cactusncar_vcf_dic.pickle" % (pickle_dir, target_species), 'wb')
     pickle.dump(ncar_objects, pickle_file)
@@ -331,7 +331,7 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
 #    if os.path.exists("/scratch/tmp/berubin/resequencing/%s/genotyping/%s_gene_vcf_dic.pickle_test" % (target_species, target_species)):
 #    if os.path.exists("/scratch/tmp/berubin/resequencing/hic/%s/genotyping/%s_gene_vcf_dic.pickle" % (target_species, target_species)):
     if os.path.exists("%s/%s_gene_vcf_dic.pickle" % (pickle_dir, target_species)):
-        print "%s pickle exists" % target_species
+        print("%s pickle exists" % target_species)
         return
 #        pickle_file = open("/scratch/tmp/berubin/resequencing/%s/genotyping/%s_gene_vcf_dic.pickle" % (target_species, target_species), 'rb')
 
@@ -339,7 +339,7 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
 #        gene_objects = pickle.load(pickle_file)
 #        pickle_file.close()
 #        return gene_objects
-    print "Building %s pickle" % target_species
+    print("Building %s pickle" % target_species)
 #    official_dir = "/Genomics/kocherlab/berubin/official_release_v2.1"
     seq_dic = {}
 #    if target_species == "LALB":
@@ -366,10 +366,10 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
 #    else:
 #    gff_file = gffParser(open("%s/%s/%s_OGS_v2.1_longest_isoform.gff3" % (official_dir, target_species, target_species), 'rU'))
     gff_file = gffParser(open(coding_gff, 'rU'))
-    print "read gff"
+    print("read gff")
 #    gff_file = gffParser(open("%s/%s/%s_09600.gff3" % (official_dir, target_species, target_species), 'rU'))
-    print "get gene data"
-    print str(datetime.datetime.now())
+    print("get gene data")
+    print(str(datetime.datetime.now()))
     gene_dic = gff_file.geneDict()
     gene_objects = {}
 #    work_queue = multiprocessing.Queue()
@@ -381,7 +381,7 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
     gff_list = []
     seq_list = []
     species_list = []
-    for gene_name in gene_dic.keys():
+    for gene_name in list(gene_dic.keys()):
 #        if gene_name == "APUR_11398": #"LZEP_05457":""LMAL_00737" or gene_name == "LLEU_03402":
 #        if gene_dic[gene_name][0] == "LZEP_chr_7" or gene_dic[gene_name][0] == "LVIE_chr_4": 
         if True:
@@ -393,17 +393,17 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
     neighbor_work = []
     for gene in gene_list:
         gene.set_neighbors(gene_list)
-    print "gene data gotten"
-    print str(datetime.datetime.now())
-    print len(gene_list)
+    print("gene data gotten")
+    print(str(datetime.datetime.now()))
+    print(len(gene_list))
     all_samples = []
     for gene in gene_list:
         gene_objects[gene.name] = gene
-        for sample_dic in gene.sample_gts.values():
-            for sample in sample_dic.keys():
+        for sample_dic in list(gene.sample_gts.values()):
+            for sample in list(sample_dic.keys()):
                 all_samples.append(sample)
             all_samples = list(set(all_samples))
-    print "Dumping %s pickle" % target_species
+    print("Dumping %s pickle" % target_species)
 #    pickle_file = open("/scratch/tmp/berubin/resequencing/%s/genotyping/%s_gene_vcf_dic.pickle_test" % (target_species, target_species), 'wb')
 #    pickle_file = open("/scratch/tmp/berubin/resequencing/hic/%s/genotyping/%s_gene_vcf_dic.pickle" % (target_species, target_species), 'wb')
     pickle_file = open("%s/%s_gene_vcf_dic.pickle" % (pickle_dir, target_species), 'wb')
@@ -413,7 +413,7 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
         os.mkdir("%s/pnps_files/" % (basedir))
     pnps_file = open("%s/pnps_files/%s_pnps.txt" % (basedir, target_species), 'w')
     outline = "Gene"
-    print all_samples
+    print(all_samples)
     for sample in all_samples:
         outline = outline + "\t" + sample + "_pn" + "\t" + sample + "_ps" + "\t" + sample + "_ngenod" + "\t" + sample + "_sgenod"
     outline = outline + "\t" + "#nsynsites\t#synsites\tpotennsyn\tpotensyn"
@@ -421,19 +421,19 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
     for gene in gene_list:
         outline = gene.name
         for sample in all_samples:
-            if sample in gene.sample_nsyn_counts.keys():
+            if sample in list(gene.sample_nsyn_counts.keys()):
                 outline = outline + "\t" + str(gene.sample_nsyn_counts[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_syn_counts.keys():
+            if sample in list(gene.sample_syn_counts.keys()):
                 outline = outline + "\t" + str(gene.sample_syn_counts[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_nsyn_genod.keys():
+            if sample in list(gene.sample_nsyn_genod.keys()):
                 outline = outline + "\t" + str(gene.sample_nsyn_genod[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_syn_genod.keys():
+            if sample in list(gene.sample_syn_genod.keys()):
                 outline = outline + "\t" + str(gene.sample_syn_genod[sample])
             else:
                 outline = outline + "\t" + "0"
@@ -443,7 +443,7 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
 
     pnps_file = open("%s/pnps_files/%s_pnps_high.txt" % (basedir, target_species), 'w')
     outline = "Gene"
-    print all_samples
+    print(all_samples)
     for sample in all_samples:
         outline = outline + "\t" + sample + "_pn" + "\t" + sample + "_ps" + "\t" + sample + "_ngenod" + "\t" + sample + "_sgenod"
     outline = outline + "\t" + "#nsynsites\t#synsites\tpotennsyn\tpotensyn"
@@ -451,19 +451,19 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
     for gene in gene_list:
         outline = gene.name
         for sample in all_samples:
-            if sample in gene.sample_hi_counts.keys():
+            if sample in list(gene.sample_hi_counts.keys()):
                 outline = outline + "\t" + str(gene.sample_hi_counts[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_syn_counts.keys():
+            if sample in list(gene.sample_syn_counts.keys()):
                 outline = outline + "\t" + str(gene.sample_syn_counts[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_hi_genod.keys():
+            if sample in list(gene.sample_hi_genod.keys()):
                 outline = outline + "\t" + str(gene.sample_hi_genod[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_syn_genod.keys():
+            if sample in list(gene.sample_syn_genod.keys()):
                 outline = outline + "\t" + str(gene.sample_syn_genod[sample])
             else:
                 outline = outline + "\t" + "0"
@@ -473,7 +473,7 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
 
     pnps_file = open("%s/pnps_files/%s_pnps_low.txt" % (basedir, target_species), 'w')
     outline = "Gene"
-    print all_samples
+    print(all_samples)
     for sample in all_samples:
         outline = outline + "\t" + sample + "_pn" + "\t" + sample + "_ps" + "\t" + sample + "_ngenod" + "\t" + sample + "_sgenod"
     outline = outline + "\t" + "#nsynsites\t#synsites\tpotennsyn\tpotensyn"
@@ -481,19 +481,19 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
     for gene in gene_list:
         outline = gene.name
         for sample in all_samples:
-            if sample in gene.sample_low_counts.keys():
+            if sample in list(gene.sample_low_counts.keys()):
                 outline = outline + "\t" + str(gene.sample_low_counts[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_syn_counts.keys():
+            if sample in list(gene.sample_syn_counts.keys()):
                 outline = outline + "\t" + str(gene.sample_syn_counts[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_low_genod.keys():
+            if sample in list(gene.sample_low_genod.keys()):
                 outline = outline + "\t" + str(gene.sample_low_genod[sample])
             else:
                 outline = outline + "\t" + "0"
-            if sample in gene.sample_syn_genod.keys():
+            if sample in list(gene.sample_syn_genod.keys()):
                 outline = outline + "\t" + str(gene.sample_syn_genod[sample])
             else:
                 outline = outline + "\t" + "0"
@@ -507,13 +507,13 @@ def get_species_data(target_species, num_threads, basedir, ingenome, coding_gff,
 
 def make_neighborhoods(attribute_list):
     gene = attribute_list[0]
-    print "neighbors" + "\t" + gene.name
+    print("neighbors" + "\t" + gene.name)
     gene_list = attribute_list[1]
     gene.set_neighbors(gene_list)
 
 def harvest_worker(attribute_list):#gene_name, gene_dic, gff_file, seq_dic, target_species):
     gene_name = attribute_list[0]
-    print gene_name
+    print(gene_name)
 #    if gene_name not in ["LZEP_01797"]:
 #        return
     gene_dic = attribute_list[1]
@@ -571,7 +571,7 @@ def cds_sequence_worker(gene):
 
 def get_gene_coords(gff_file, gene_dic, gene_objects, seq_dic):
     #Add coordinate data for all of the Gene objects
-    for gene_name in gene_dic.keys():
+    for gene_name in list(gene_dic.keys()):
         gene_deets = gff_file.getGene(gene_dic[gene_name][0], gene_name)[0]
         gene_objects[gene_name].set_start(gene_deets["start"])
         gene_objects[gene_name].set_end(gene_deets["end"])
@@ -581,7 +581,7 @@ def get_gene_coords(gff_file, gene_dic, gene_objects, seq_dic):
 def get_utr_dic(gff_file, gene_dic, prime_end, gene_objects):
     #Add UTR coordinate data to all of the Gene objects
     utr_tuples = {}
-    for gene_name in gene_dic.keys():
+    for gene_name in list(gene_dic.keys()):
         mrna_list = gff_file.getmRNA(gene_dic[gene_name][0], gene_name) #only one mRNA because working with longest iso
         for mrna_dic in mrna_list:
             if prime_end == "five":
@@ -597,7 +597,7 @@ def get_utr_dic(gff_file, gene_dic, prime_end, gene_objects):
 def get_cds_dic(gff_file, gene_dic, gene_objects):
     #Create Gene objects
     out_dic = {}
-    for gene_name in gene_dic.keys():
+    for gene_name in list(gene_dic.keys()):
         mrna_list = gff_file.getmRNA(gene_dic[gene_name][0], gene_name) #only one mRNA because working with longest iso
         for mrna_dic in mrna_list:
             cds_dic = gff_file.getCDS(gene_dic[gene_name][0], mrna_dic["Name"])
@@ -616,7 +616,7 @@ def check_og_complete(og_num, inspecies, outspecies, ortho_dic):
 #    print inspecies
 #    print og_num
 #    print ortho_dic[og_num]
-    if inspecies not in ortho_dic[og_num].keys() or outspecies not in ortho_dic[og_num].keys():
+    if inspecies not in list(ortho_dic[og_num].keys()) or outspecies not in list(ortho_dic[og_num].keys()):
         return False
     if ortho_dic[og_num][inspecies][0].count(inspecies) > 1 or ortho_dic[og_num][outspecies][0].count(outspecies) > 1:
         return False
@@ -636,7 +636,7 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
     hka_line_list = []
     numloci = 0
     og_list = []
-    for og_num in ortho_dic.keys():
+    for og_num in list(ortho_dic.keys()):
         if inspecies not in ortho_dic[og_num] or outspecies not in ortho_dic[og_num]:
             continue
         if ortho_dic[og_num][inspecies][0].count(inspecies) > 1 or ortho_dic[og_num][outspecies][0].count(outspecies) > 1:
@@ -646,13 +646,13 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
 #    og_list = [2110]
 #    og_list = [870]
 #    og_list = og_list[0:50]
-    print "starting ogs: %s" % len(og_list)
-    print "orthodic ogs: %s" % len(ortho_dic.keys())
+    print("starting ogs: %s" % len(og_list))
+    print("orthodic ogs: %s" % len(list(ortho_dic.keys())))
     work_list = []
     in_gene_dic = read_species_pickle(inspecies)
-    print "%s pickle read" % inspecies
+    print("%s pickle read" % inspecies)
     out_gene_dic = read_species_pickle(outspecies)
-    print "%s pickle read" % outspecies
+    print("%s pickle read" % outspecies)
     og_map_dic = make_og_gene_map(ortho_dic)
     not_enough_neighbors = 0
 #    og_list = [9860]
@@ -662,7 +662,7 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
         ##THIS IS JUST FOR TESTSET
 #        if inspecies_gene not in in_gene_dic.keys() or outspecies_gene not in out_gene_dic.keys():
 #            continue
-        print og
+        print(og)
         in_gene = in_gene_dic[inspecies_gene]
         out_gene = out_gene_dic[outspecies_gene]
         neighbor_dic = {}
@@ -671,7 +671,7 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
             try:
                 neighbor_og = og_map_dic[neighbor_name]
             except KeyError:
-                print "%s not in orthology dictionary" % neighbor_name
+                print("%s not in orthology dictionary" % neighbor_name)
                 continue
             if not neighbor_og:
                 continue
@@ -689,8 +689,8 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
 #        hka_line_list.append(hka_worker([inspecies, outspecies, seq_type, og, in_gene, out_gene, out_path, align_dir, neighbor_dic]))
 
         work_list.append([inspecies, outspecies, seq_type, og, in_gene, out_gene, out_path, align_dir, neighbor_dic])
-    print "not enough neighbors: %s" % not_enough_neighbors
-    print len(work_list)
+    print("not enough neighbors: %s" % not_enough_neighbors)
+    print(len(work_list))
     og_map.close()
     pool = multiprocessing.Pool(processes = num_threads)
     hka_lines = pool.map(hka_worker, work_list)
@@ -709,7 +709,7 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
     no_align_2 = 0
     no_align_3 = 0
     no_align_4 = 0
-    print "starting lines: %s" % len(hka_lines)
+    print("starting lines: %s" % len(hka_lines))
     for line in hka_lines:
         if "too_short" in line:
             too_short += 1
@@ -734,15 +734,15 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
 
         if "too_short" not in line and "too_different" not in line and "HKA_failed" not in line[0] and "insufficient_sampling" not in line and "no_alignment" not in line:
             jody_lines.append(line[0])
-    print "too short: %s" % too_short
-    print "too diff 1: %s" % too_different_1
-    print "too diff 2: %s" % too_different_2
-    print "too diff 3: %s" % too_different_3
-    print "insuff: %s" % insuf_sam
-    print "no align 1: %s" % no_align_1
-    print "no align 2: %s" % no_align_2
-    print "no align 3: %s" % no_align_3
-    print "no align 4: %s" % no_align_4
+    print("too short: %s" % too_short)
+    print("too diff 1: %s" % too_different_1)
+    print("too diff 2: %s" % too_different_2)
+    print("too diff 3: %s" % too_different_3)
+    print("insuff: %s" % insuf_sam)
+    print("no align 1: %s" % no_align_1)
+    print("no align 2: %s" % no_align_2)
+    print("no align 3: %s" % no_align_3)
+    print("no align 4: %s" % no_align_4)
 
 #    jody_correction(jody_lines, "%s/hka_tests/%s_%s_%s_hka_results_correct.txt" % (out_path, inspecies, outspecies, seq_type), "%s/hka_tests/%s_%s_%s_hka_results_correct_faster.txt" % (out_path, inspecies, outspecies, seq_type), "%s/hka_tests/%s_%s_%s_hka_results_correct_slower.txt" % (out_path, inspecies, outspecies, seq_type))
     for line in hka_lines:
@@ -760,7 +760,7 @@ def hka_test(inspecies, outspecies, seq_type, ortho_dic, out_path, num_threads, 
 #this is all for running HKAdirect
     hka_table.write("nloci %s\n" % (len(hkadirect_lines)))
     hka_table.write("IDlocus\tnsam\tSegSites\tDivergence\tlength_pol\tlength_div\tfactor_chrn\n")
-    print len(hkadirect_lines)
+    print(len(hkadirect_lines))
     for line in hkadirect_lines:
         hka_table.write(line)
     hka_table.close()
@@ -901,7 +901,7 @@ def hka_worker(attribute_list):
     align_dir = attribute_list[7]
     neighbor_dic = attribute_list[8]                                 
         
-    print og_num
+    print(og_num)
     if not os.path.exists("%s/og_cds_%s.afa" % (align_dir, og_num)):
         return "OG_%s\tinsufficient_sampling\t" % og_num
     inpoly, outpoly, inseq, outseq, insample, outsample = gather_hka_data(in_gene, out_gene, seq_type)
@@ -953,7 +953,7 @@ def hka_worker(attribute_list):
     outfile = open("%s/hka_tests/hey_%s_%s/OG_%s_%s_%s_%s_hka.txt" % (out_path, inspecies, outspecies, og_num, inspecies, outspecies, seq_type), 'w')
     neighbor_stats_list = [] 
     direct_stats_list = []
-    for neighbor_og, neighbor in neighbor_dic.items():
+    for neighbor_og, neighbor in list(neighbor_dic.items()):
         neighbor_stats = fourfold_degenerate_string([neighbor[0], neighbor[1], align_dir, neighbor_og, inspecies, outspecies])
 
         if "insufficient_sampling" not in neighbor_stats:
@@ -1295,15 +1295,15 @@ def gather_hka_data(inspecies_gene, outspecies_gene, seq_type):
     elif seq_type == "three_prime_utr":
         inpoly = inspecies_gene.utr3_subs
         outpoly = outspecies_gene.utr3_subs
-        inseq = "".join(inspecies_gene.utr3_dic.values())
-        outseq = "".join(outspecies_gene.utr3_dic.values())
+        inseq = "".join(list(inspecies_gene.utr3_dic.values()))
+        outseq = "".join(list(outspecies_gene.utr3_dic.values()))
         insample = inspecies_gene.average_n
         outsample = outspecies_gene.average_n
     elif seq_type == "five_prime_utr":
         inpoly = inspecies_gene.utr5_subs
         outpoly = outspecies_gene.utr5_subs
-        inseq = "".join(inspecies_gene.utr5_dic.values())
-        outseq = "".join(outspecies_gene.utr5_dic.values())
+        inseq = "".join(list(inspecies_gene.utr5_dic.values()))
+        outseq = "".join(list(outspecies_gene.utr5_dic.values()))
         insample = inspecies_gene.average_n
         outsample = outspecies_gene.average_n
 
@@ -1401,9 +1401,9 @@ def mafft_pairwise_diff_count(seq1, seq2, inspecies, outspecies, og_num, in_gene
         insite_list = [align_dic["inseq"][x].lower()]
 
         outsite_list = [align_dic["outseq"][x].lower()]
-        if x in in_gene_alt_dic.keys():
+        if x in list(in_gene_alt_dic.keys()):
             insite_list.append(str(in_gene_alt_dic[x]).lower())
-        if x in out_gene_alt_dic.keys():
+        if x in list(out_gene_alt_dic.keys()):
             outsite_list.append(str(out_gene_alt_dic[x]).lower())
         overlap = False
         for nuc in insite_list:
@@ -1486,12 +1486,12 @@ def fsa_pairwise_diff_count(seq1, seq2, inspecies, outspecies, og_num, in_gene, 
             out_gene_alt_dic = out_gene.check_polymorphisms_fixed(align_dic, out_gene.cds_coords[-1][0] - outtuple[1], "outseq")
         else:
             out_gene_alt_dic = out_gene.check_polymorphisms_fixed(align_dic, out_gene.cds_coords[0][1] + outtuple[0], "outseq")
-        print in_gene.name
+        print(in_gene.name)
         for k in sorted(in_gene_alt_dic.keys()):
-            print "%s:%s" % (k, in_gene_alt_dic[k])
-        print in_gene.name
+            print("%s:%s" % (k, in_gene_alt_dic[k]))
+        print(in_gene.name)
         for k in sorted(out_gene_alt_dic.keys()):
-            print "%s:%s" % (k, out_gene_alt_dic[k])
+            print("%s:%s" % (k, out_gene_alt_dic[k]))
 
 
     for x in range(len(align_dic["inseq"])):
@@ -1501,9 +1501,9 @@ def fsa_pairwise_diff_count(seq1, seq2, inspecies, outspecies, og_num, in_gene, 
         insite_list = [align_dic["inseq"][x].lower()]
 
         outsite_list = [align_dic["outseq"][x].lower()]
-        if x in in_gene_alt_dic.keys():
+        if x in list(in_gene_alt_dic.keys()):
             insite_list.append(str(in_gene_alt_dic[x]).lower())
-        if x in out_gene_alt_dic.keys():
+        if x in list(out_gene_alt_dic.keys()):
             outsite_list.append(str(out_gene_alt_dic[x]).lower())
         overlap = False
         for nuc in insite_list:
@@ -1515,7 +1515,7 @@ def fsa_pairwise_diff_count(seq1, seq2, inspecies, outspecies, og_num, in_gene, 
 
 
 def includes_paralogs(og_dic):
-    for k, v in og_dic.items():
+    for k, v in list(og_dic.items()):
         if v[0].count(",") > 0:
             return True
 
@@ -1564,12 +1564,12 @@ def ncar_mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, 
         os.mkdir("%s/ncar_mk_tests/" % (basedir))
     get_species_data(inspecies, num_threads, basedir, ingenome, coding_gff, pickle_dir)
     in_gene_dic = read_species_pickle(inspecies, pickle_dir, "gene")
-    print "%s gene pickle read" % inspecies
+    print("%s gene pickle read" % inspecies)
     get_species_ncar_data(inspecies, num_threads, basedir, ingff, ingenome, ortho_dic, in_gene_dic, pickle_dir)
 #    in_ncar_dic = read_species_pickle(inspecies, pickle_dir, "cnee")
 #    in_ncar_dic = read_species_pickle(inspecies, pickle_dir, "ncar")
     in_ncar_dic = read_species_pickle(inspecies, pickle_dir, "cactusncar")
-    print "%s ncar pickle read" % inspecies
+    print("%s ncar pickle read" % inspecies)
     outfile = open("%s/ncar_mk_tests/%s_%s_mk.txt" % (basedir, inspecies, outspecies), 'w')
     outfile.write("NCAR\t#poly\t#fixed\t#neib_4d_poly\t#neib_4d_fixed\tncar_sites\t#neib_4d\tNCAR_N\talpha\todds_rat\tpval\n")
     neighbor_file = open("%s/ncar_mk_tests/%s_%s_mk_neighbors.txt" % (basedir, inspecies, outspecies), 'w')
@@ -1581,15 +1581,15 @@ def ncar_mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, 
 
     og_map_dic = make_og_gene_map(coding_ortho_dic)
     not_enough_neighbors = 0
-    for ncar_num, species_gene_dic in ortho_dic.items():
+    for ncar_num, species_gene_dic in list(ortho_dic.items()):
 #        print ncar_num
 #        print species_gene_dic
-        if len(species_gene_dic.keys()) < min_taxa:
+        if len(list(species_gene_dic.keys())) < min_taxa:
             continue
         inspecies_gene = ortho_dic[ncar_num][inspecies]
 #        if "NMEL_chr_1:" not in inspecies_gene:# and "LVIE_chr_4" not in inspecies_gene:
 #            continue
-        print inspecies_gene
+        print(inspecies_gene)
         
         outspecies_gene = ortho_dic[ncar_num][outspecies]
         inseq, outseq = get_fsa_aligned_seqs(align_dir, ncar_num, inspecies, outspecies, "ncar")
@@ -1632,7 +1632,7 @@ def ncar_mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, 
         neighbor_stats_list = []
         direct_stats_list = []
         av_ns = [in_ncar.average_n]
-        for neighbor_og, neighbor in neighbor_dic.items():
+        for neighbor_og, neighbor in list(neighbor_dic.items()):
 #            print neighbor_og
             av_ns.append(neighbor.cds_average_n)
             node_index_dic, node_seqs = read_ancestral_seq("%s/og_%s_working/rst" % (coding_anc_dir, neighbor_og))
@@ -1661,7 +1661,7 @@ def ncar_mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, 
         outfile.write("NCAR_%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (ncar_num, in_poly, diff_base, in_poly_fourf, fix_fourfold, in_ncar.potential_poly_sites(), align_potent_fourf, in_ncar.average_n, alpha, odds_rat, pval))
         if in_ncar.average_n > 0:
             snipre_table.write("NCAR_%s\t%s\t%s\t%s\t%s\t%s\t%s\t1\t%s\n" % (ncar_num, in_poly, diff_base, in_poly_fourf, fix_fourfold, in_ncar.potential_poly_sites(), align_potent_fourf, in_ncar.average_n * 2))
-    print "not enough neighbors: %s" % not_enough_neighbors
+    print("not enough neighbors: %s" % not_enough_neighbors)
     outfile.close()
 
 def mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, num_threads, min_taxa, ingenome, coding_gff, pickle_dir):
@@ -1671,7 +1671,7 @@ def mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, num_t
 #    sys.exit()
 ####    get_species_data(outspecies, num_threads)
     in_gene_dic = read_species_pickle(inspecies, pickle_dir, "gene")
-    print "%s gene pickle read" % inspecies
+    print("%s gene pickle read" % inspecies)
 ###    out_gene_dic = read_species_pickle(outspecies)
     outfile = open("%s/coding_mk_tests/%s_%s_mk.txt" % (basedir, inspecies, outspecies), 'w')
     outfile.write("OG\t#pn\t#dn\t#ps\t#ds\tpotential_nsyn\tpotential_syn\tmean_N\talpha\todds_rat\tpval\n")
@@ -1681,11 +1681,11 @@ def mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, num_t
     prop_shared = 0
     starting = 0
     nearest = 0
-    for og_num in ortho_dic.keys():
+    for og_num in list(ortho_dic.keys()):
 #        print "OG %s" % og_num
 #        if og_num != 7:
 #            continue
-        if len(ortho_dic[og_num].keys()) < min_taxa:
+        if len(list(ortho_dic[og_num].keys())) < min_taxa:
             continue
         if inspecies not in ortho_dic[og_num] or outspecies not in ortho_dic[og_num]:
             continue
@@ -1756,9 +1756,9 @@ def mk_test(inspecies, outspecies, ortho_dic, align_dir, anc_dir, basedir, num_t
     snipre_table.close()
     pinpis_table.close()
     outfile.close()
-    print nearest
-    print starting
-    print prop_shared
+    print(nearest)
+    print(starting)
+    print(prop_shared)
 
 def fixed_sub_types(inspecies, outspecies, og_num, align_dir, inseq, outseq, in_gene):
 #    inseq, outseq = get_prank_aligned_seqs(align_dir, og_num, inspecies, outspecies)
@@ -1786,7 +1786,7 @@ def fixed_sub_types(inspecies, outspecies, og_num, align_dir, inseq, outseq, in_
         for cod_index in range(3):
             incodon_list.append([inseq[x+cod_index].upper()])
             outcodon_list.append([outseq[x+cod_index].upper()])
-            if x+cod_index in in_gene_alt_dic.keys():
+            if x+cod_index in list(in_gene_alt_dic.keys()):
                 incodon_list[cod_index].append(str(in_gene_alt_dic[x+cod_index]).upper())
 #            if x+cod_index in out_gene_alt_dic.keys():
 #                outcodon_list[cod_index].append(str(out_gene_alt_dic[x+cod_index]).upper())
@@ -1836,8 +1836,8 @@ def pairs_coding_div(inspecies, outspecies, ortho_dic, align_dir, basedir, num_t
     outfile = open("%s/paired_cds_div/%s_%s_cds_div.txt" % (basedir, inspecies, outspecies), 'w')
     total_sames = 0
     total_diffs = 0
-    for og_num in ortho_dic.keys():
-        if len(ortho_dic[og_num].keys()) < min_taxa:
+    for og_num in list(ortho_dic.keys()):
+        if len(list(ortho_dic[og_num].keys())) < min_taxa:
             continue
         if inspecies not in ortho_dic[og_num] or outspecies not in ortho_dic[og_num]:
             continue
@@ -1871,16 +1871,16 @@ def pairs_coding_div(inspecies, outspecies, ortho_dic, align_dir, basedir, num_t
             x += 1
         outfile.write("OG_%s\t%s\t%s\t%s\n" % (og_num, same_count, diff_count, float(diff_count) / (same_count + diff_count)))
     outfile.close()
-    print "%s\t%s\t%s\t%s\t%s" % (inspecies, outspecies, total_sames, total_diffs, float(total_diffs) / (total_sames + total_diffs))
+    print("%s\t%s\t%s\t%s\t%s" % (inspecies, outspecies, total_sames, total_diffs, float(total_diffs) / (total_sames + total_diffs)))
 
 def gather_fixed_v_shared(inspecies, outspecies, ortho_dic, align_dir, basedir, num_threads, min_taxa, pickle_dir):
     if not os.path.exists("%s/fixed_v_shared/" % (basedir)):
         os.mkdir("%s/fixed_v_shared/" % (basedir))
 
     in_gene_dic = read_species_pickle(inspecies, pickle_dir, "gene")
-    print "%s gene pickle read" % inspecies
+    print("%s gene pickle read" % inspecies)
     out_gene_dic = read_species_pickle(outspecies, pickle_dir.replace(inspecies, outspecies), "gene")
-    print "%s gene pickle read" % outspecies
+    print("%s gene pickle read" % outspecies)
     outfile = open("%s/fixed_v_shared/%s_%s_polys.txt" % (basedir, inspecies, outspecies), 'w')
     outfile.write("OG\tps\tpn\tshare_s\tshare_n\n")
     prop_shared = 0
@@ -1890,11 +1890,11 @@ def gather_fixed_v_shared(inspecies, outspecies, ortho_dic, align_dir, basedir, 
     total_nsyn = 0
     total_shared_syn = 0
     total_shared_nsyn = 0
-    for og_num in ortho_dic.keys():
+    for og_num in list(ortho_dic.keys()):
 #        print "OG %s" % og_num
 #        if og_num != 7:
 #            continue
-        if len(ortho_dic[og_num].keys()) < min_taxa:
+        if len(list(ortho_dic[og_num].keys())) < min_taxa:
             continue
         if inspecies not in ortho_dic[og_num] or outspecies not in ortho_dic[og_num]:
             continue
@@ -1951,7 +1951,7 @@ def gather_fixed_v_shared(inspecies, outspecies, ortho_dic, align_dir, basedir, 
             outfile.write("OG_%s\t%s\t%s\t%s\t%s\n" % (og_num, poly_syn, poly_nsyn, shared_syns, shared_nsyns))#, in_poly_syn, in_poly_nsyn))
 #    pinpis_table.close()
     outfile.close()
-    print "%s\t%s\t%s\t%s\t%s\t%s" % (inspecies, outspecies, total_syn, total_nsyn, total_shared_syn, total_shared_nsyn)
+    print("%s\t%s\t%s\t%s\t%s\t%s" % (inspecies, outspecies, total_syn, total_nsyn, total_shared_syn, total_shared_nsyn))
 #    print nearest
 #    print starting
 #    print prop_shared
@@ -1962,12 +1962,12 @@ def fixed_v_shared_subs(inspecies, outspecies, og_num, align_dir, inseq, outseq,
     in_gene_alt_dic = in_gene.coding_fixed_align(inseq)
     out_gene_alt_dic = out_gene.coding_fixed_align(outseq)
     temp_dic = {}
-    for k, v in in_gene_alt_dic.items():
+    for k, v in list(in_gene_alt_dic.items()):
         if len(v) == 1:
             temp_dic[k] = v
     in_gene_alt_dic = temp_dic
     temp_dic = {}
-    for k, v in out_gene_alt_dic.items():
+    for k, v in list(out_gene_alt_dic.items()):
         if len(v) == 1:
             temp_dic[k] = v
     out_gene_alt_dic = temp_dic
@@ -2006,10 +2006,10 @@ def fixed_v_shared_subs(inspecies, outspecies, og_num, align_dir, inseq, outseq,
         for cod_index in range(3):
             incodon_list.append([inseq[x+cod_index].upper()])
             outcodon_list.append([outseq[x+cod_index].upper()])
-            if x+cod_index-ingap_count in in_gene_alt_dic.keys():
+            if x+cod_index-ingap_count in list(in_gene_alt_dic.keys()):
                 incodon_list[cod_index].append(str(in_gene_alt_dic[x+cod_index-ingap_count]).upper())
                 has_variant = True
-            if x+cod_index-outgap_count in out_gene_alt_dic.keys():
+            if x+cod_index-outgap_count in list(out_gene_alt_dic.keys()):
                 outcodon_list[cod_index].append(str(out_gene_alt_dic[x+cod_index-outgap_count]).upper())
         if not has_variant:
             x = x+3
@@ -2204,9 +2204,9 @@ def rename_tree(seqfile, outname, phylogeny_file):
     for rec in reader:
         name_dic[rec.id[0:4]] = rec.id
     tree = PhyloTree(phylogeny_file)
-    tree.prune(name_dic.keys())
+    tree.prune(list(name_dic.keys()))
     tree_str = tree.write(format = 5)
-    for k, v in name_dic.items():
+    for k, v in list(name_dic.items()):
         tree_str = tree_str.replace(k, v)
     outfile = open(outname, 'w')
     outfile.write(tree_str)
@@ -2225,8 +2225,8 @@ def aligned_og_completeness(og_list, align_dir, min_taxa):
 
 def prep_paml_files(orthogroup, indir, outdir, foreground, phylogeny_file, test_type, min_taxa, use_gblocks, exclude_taxa):
     #formats fasta and tree files for PAML analysis
-    print orthogroup
-    print foreground
+    print(orthogroup)
+    print(foreground)
     tree_prep = True
     terminals = False
     fore_list = []
@@ -2291,14 +2291,14 @@ def prep_paml_files(orthogroup, indir, outdir, foreground, phylogeny_file, test_
         outfile = open("%s/ncar_%s.afa" % (outdir, orthogroup), 'w')
     else:
         outfile = open("%s/og_cds_%s.afa" % (outdir, orthogroup), 'w')
-        for species, sequence in seq_dic.items():
+        for species, sequence in list(seq_dic.items()):
             if len(sequence) % 3 > 0:
                 outfile.close()
-                print "Not divisible by 3 %s" % orthogroup
+                print("Not divisible by 3 %s" % orthogroup)
                 return False
             if str(Seq.Seq(sequence.replace("-", "N")).translate()).count("*") > 1:
                 outfile.close()
-                print "Too many stop codons %s" % orthogroup
+                print("Too many stop codons %s" % orthogroup)
                 return False
         
             
@@ -2306,16 +2306,16 @@ def prep_paml_files(orthogroup, indir, outdir, foreground, phylogeny_file, test_
         outfile.write("%s %s\n" % (len(seq_dic), len(rec.seq) / 3))
     elif test_type not in ["RELAX", "aBSREL"]:
         outfile.write("%s %s\n" % (len(seq_dic), len(rec.seq)))
-    for species, sequence in seq_dic.items():
+    for species, sequence in list(seq_dic.items()):
         if foreground == "aaml_blengths":
             outfile.write("%s\n%s\n" % (species[0:4], str(Seq.Seq(sequence.replace("-", "N")).translate())))
         elif foreground == "free" or foreground == "yn":
             if len(sequence) % 3 > 0:
-                print species
-                print str(Seq.Seq(sequence.replace("-", "N")).translate())
+                print(species)
+                print(str(Seq.Seq(sequence.replace("-", "N")).translate()))
             if str(Seq.Seq(sequence.replace("-", "N")).translate()).count("*") > 0:
                 outfile.close()
-                print "Too many stop codons in %s %s" % (species, orthogroup)
+                print("Too many stop codons in %s %s" % (species, orthogroup))
                 return False
             else:
                 outfile.write("%s\n%s\n" % (species[0:4], sequence))
@@ -2326,12 +2326,12 @@ def prep_paml_files(orthogroup, indir, outdir, foreground, phylogeny_file, test_
     outfile.close()
     if tree_prep:
         if test_type == "RELAX":
-            print foreground
+            print(foreground)
             if foreground == "INTREE":
 #                shutil.copyfile(phylogeny_file, "%s/og_%s.tree" % (outdir, orthogroup))
                 trim_phylo_ancestral_hyphy(taxa_list, orthogroup, outdir, phylogeny_file)
             elif foreground[0] == "DAUGHTERS":
-                print "DAUGHT"
+                print("DAUGHT")
                 trim_phylo_alldaughters_hyphy(taxa_list, fore_list[1:], orthogroup, outdir, phylogeny_file)
             else:
                 trim_phylo_hyphy(taxa_list, fore_list, orthogroup, outdir, phylogeny_file)
@@ -2402,11 +2402,11 @@ def terminal_test_overlap(indir, prefix, test_type, target_taxa, soc_list, sol_l
         soc_pairs_count = 0
         sol_pairs_count = 0
         for soc in soc_list:
-            if og in sig_dic[soc].keys():
+            if og in list(sig_dic[soc].keys()):
                 if sig_dic[soc][og] < 0.05:
                     soc_count += 1
         for sol in sol_list:
-            if og in sig_dic[sol].keys():
+            if og in list(sig_dic[sol].keys()):
                 if sig_dic[sol][og] < 0.05:
                     sol_count += 1
 
@@ -2415,7 +2415,7 @@ def terminal_test_overlap(indir, prefix, test_type, target_taxa, soc_list, sol_l
 #            print pair
 #            print sig_dic[pair[0]][og]
 
-            if og in sig_dic[pair[0]].keys() and og in sig_dic[pair[1]].keys():
+            if og in list(sig_dic[pair[0]].keys()) and og in list(sig_dic[pair[1]].keys()):
                 if sig_dic[pair[0]][og] < 0.05 and sig_dic[pair[1]][og] > 0.05:
                     soc_pairs_count += 1
 #            if og in sig_dic[pair[1]].keys() and og in sig_dic[pair[0]].keys():           
@@ -2423,7 +2423,7 @@ def terminal_test_overlap(indir, prefix, test_type, target_taxa, soc_list, sol_l
                     sol_pairs_count += 1
         out_ps = []
         for taxon in target_taxa:
-            if og in sig_dic[taxon].keys():
+            if og in list(sig_dic[taxon].keys()):
                 out_ps.append(str(round(sig_dic[taxon][og], 5)))
             else:
                 out_ps.append("NA")
@@ -2468,7 +2468,7 @@ def test_lrt_branch(indir, outpath, database_file, ortho_dic, go_dir):
     for x in range(len(pval_corr)):
         p_dic[og_list[x]] = pval_corr[x]
 
-    sorted_pvals = sorted(p_dic.items(), key = lambda x: x[1])
+    sorted_pvals = sorted(list(p_dic.items()), key = lambda x: x[1])
     sig_ogs_fast = []
     sig_ogs_slow = []
     for pval in sorted_pvals:
@@ -2508,7 +2508,7 @@ def test_lrt(indir, outpath, database_file, ortho_dic, go_dir):
     for x in range(len(pval_corr)):
         p_dic[og_list[x]] = pval_corr[x]
 
-    sorted_pvals = sorted(p_dic.items(), key = lambda x: x[1])
+    sorted_pvals = sorted(list(p_dic.items()), key = lambda x: x[1])
     sig_ogs = []
     for pval in sorted_pvals:
         if float(pval[1]) < 0.05:
@@ -2544,7 +2544,7 @@ def compile_gene_trees(og_list, indir, ref_tree, outdir):
     ref_tr = PhyloTree(ref_tree)
     bad_count = 0
     for og in og_list:
-        print og
+        print(og)
         if not os.path.exists("%s/RAxML_bestTree.og_%s.tree" % (indir, og)):
             continue
         tree = PhyloTree("%s/RAxML_bestTree.og_%s.tree" % (indir, og))
@@ -2560,34 +2560,34 @@ def compile_gene_trees(og_list, indir, ref_tree, outdir):
             cur_bl_dic[leaf.name] = leaf.dist
 #        tree.prune(cur_bl_dic.keys(), preserve_branch_length = True)
         time_tree = PhyloTree(ref_tree)
-        time_tree.prune(cur_bl_dic.keys(), preserve_branch_length = True)
+        time_tree.prune(list(cur_bl_dic.keys()), preserve_branch_length = True)
         time_dic = standardize_to_time(cur_bl_dic, time_tree)
 #        time_dic = cur_bl_dic
 
 
         if tree.robinson_foulds(ref_tr)[0] > 0:
-            print og
-            print tree
-            print tree.robinson_foulds(ref_tr)
+            print(og)
+            print(tree)
+            print(tree.robinson_foulds(ref_tr))
             bad_count += 1
             continue
         for leaf in tree:
             if leaf.name == "BTER":
                 continue
-            if leaf.name not in og_bl_dic.keys():
+            if leaf.name not in list(og_bl_dic.keys()):
                 
                 og_bl_dic[leaf.name] = []
             og_bl_dic[leaf.name].append(time_dic[leaf.name])
 #            og_bl_dic[leaf.name].append(leaf.dist)
     outfile = open("%s/bls.txt" % (outdir), 'w')
-    for species in og_bl_dic.keys():
+    for species in list(og_bl_dic.keys()):
         outfile.write("%s\t%s\t%s\n" % (species, numpy.median(og_bl_dic[species]), numpy.std(og_bl_dic[species])))
-    print bad_count
+    print(bad_count)
     outfile.close()
 
 def standardize_to_time(target_dic, ref_tree):
     standard_dic = {}
-    for k, v in target_dic.items():
+    for k, v in list(target_dic.items()):
         if k in ["Dnov", "Nmel"]:
             continue
         standard_dic[k] = v / ref_tree.get_leaves_by_name(k)[0].dist
@@ -2653,7 +2653,7 @@ def read_frees(indir, outdir, database_file, go_dir, get_dn_ds, time_tree, og_li
             continue
         og_dnds_dic[cur_og] = dnds_dic
         if get_dn_ds:
-            taxa_pres = dn_dic.keys()
+            taxa_pres = list(dn_dic.keys())
             if len(taxa_pres) == 0:
                 continue
             if "Dnov" in taxa_pres:
@@ -2663,7 +2663,7 @@ def read_frees(indir, outdir, database_file, go_dir, get_dn_ds, time_tree, og_li
             tree = PhyloTree(time_tree)
             tree.prune(taxa_pres, preserve_branch_length = True)
             dn_time_dic = standardize_to_time(dn_dic, tree)
-            taxa_pres = ds_dic.keys()
+            taxa_pres = list(ds_dic.keys())
             if "Dnov" in taxa_pres:
                 taxa_pres.remove("Dnov")
             if "Nmel" in taxa_pres:
@@ -2679,8 +2679,8 @@ def read_frees(indir, outdir, database_file, go_dir, get_dn_ds, time_tree, og_li
     for species in species_list:
         outfile = open("%s/%s_free_dnds.txt" % (outdir, species), 'w')
         dnds_list = []
-        for og in og_dnds_dic.keys():
-            if species in og_dnds_dic[og].keys():
+        for og in list(og_dnds_dic.keys()):
+            if species in list(og_dnds_dic[og].keys()):
                 outfile.write("%s\t%s\n" % (og, og_dnds_dic[og][species]))
                 dnds_list.append(og_dnds_dic[og][species])
             else:
@@ -2695,8 +2695,8 @@ def read_frees(indir, outdir, database_file, go_dir, get_dn_ds, time_tree, og_li
             ds_list = []
             dnfile = open("%s/%s_free_dn.txt" % (outdir, species), 'w')
             dsfile = open("%s/%s_free_ds.txt" % (outdir, species), 'w')
-            for og in og_dn_dic.keys():
-                if species in og_dn_dic[og].keys():
+            for og in list(og_dn_dic.keys()):
+                if species in list(og_dn_dic[og].keys()):
                     if og_dn_dic[og][species] < 1:
                         dnfile.write("%s\t%s\n" % (og, og_dn_dic[og][species]))
                         dn_list.append(og_dn_dic[og][species])
@@ -2720,14 +2720,14 @@ def read_frees(indir, outdir, database_file, go_dir, get_dn_ds, time_tree, og_li
     soc_list = []
     sol_list = []
     background_ogs = []
-    for og in og_dnds_dic.keys():
+    for og in list(og_dnds_dic.keys()):
         if og not in og_list:
             continue
         sol_larger = True
         soc_larger = True
         background_og = True
-        for soc, sol in soc_sol_pairs.items():
-            if soc in og_dnds_dic[og].keys() and sol in og_dnds_dic[og].keys():
+        for soc, sol in list(soc_sol_pairs.items()):
+            if soc in list(og_dnds_dic[og].keys()) and sol in list(og_dnds_dic[og].keys()):
                 if og_dnds_dic[og][soc] <= og_dnds_dic[og][sol]:
                     soc_larger = False
                 if og_dnds_dic[og][sol] <= og_dnds_dic[og][soc]:
@@ -2744,7 +2744,7 @@ def read_frees(indir, outdir, database_file, go_dir, get_dn_ds, time_tree, og_li
             sol_list.append(og)
         if background_og:
             background_ogs.append(og)
-    print len(background_ogs)
+    print(len(background_ogs))
     soc_larger_file.close()
     sol_larger_file.close()
 #    run_termfinder(soc_list, background_ogs, database_file, ortho_dic, "%s_soc" % go_dir)
@@ -2762,7 +2762,7 @@ def read_aaml_phylos(og_list, indir, outdir, outfile, min_taxa):#, full_tree):
     og_phylo_dic = {}
     for cur_og in og_list:
         if not os.path.exists("%s/og_%s.alt" % (indir, cur_og)):
-            print "%s/og_%s.alt is missing" % (indir, cur_og)
+            print("%s/og_%s.alt is missing" % (indir, cur_og))
             continue
         og_file =open("%s/og_%s.alt" % (indir, cur_og), 'rU')
         aa_tree = False
@@ -2816,7 +2816,7 @@ def aaml_time_phylos(og_list, indir, outdir, calib_tree, fore_list):
     time_dic = {}
     time_blengths = get_blengths(time_tree, time_tree)
     temp_blengths = {}
-    for k, v in time_blengths.items():
+    for k, v in list(time_blengths.items()):
         temp_blengths[str(k)] = time_blengths[k]
     time_blengths = temp_blengths
 #    print time_blengths
@@ -2827,17 +2827,17 @@ def aaml_time_phylos(og_list, indir, outdir, calib_tree, fore_list):
         
 #    outfile.write("OG\t%s\twilcox_p\tinmed\toutmed\n" % ("\t".join(str(time_blengths.keys()))))
     header_written = False
-    for og, phylo in og_phylo_dic.items():
+    for og, phylo in list(og_phylo_dic.items()):
         og_blengths = get_blengths(phylo, time_tree)
         temp_blengths = {}
-        for k, v in og_blengths.items():
+        for k, v in list(og_blengths.items()):
             temp_blengths[str(k)] = og_blengths[k]
         og_blengths = temp_blengths
 #        print og_blengths
         aa_dic = {}
         node_names = []
         header_names = []
-        for k, v in time_blengths.items():
+        for k, v in list(time_blengths.items()):
             aa_dic[k] = og_blengths[k] / time_blengths[k]
             node_names.append(k)
             header_names.append(str(k))
@@ -2932,14 +2932,14 @@ def ds_time_correlations(og_list, indir, outdir, calib_tree, trait_tree, og_ds_d
     rando_rho_dic = {}
     outfile = open("%s/ds_time_correlations.txt" % outdir, 'w')
     random_file = open("%s/ds_time_correlations_randomtrait.txt" % outdir, 'w')
-    for og, og_ds_tree in og_ds_dic.items():
+    for og, og_ds_tree in list(og_ds_dic.items()):
         og_file = open("%s/og_%s_traits.txt" % (outdir, og), 'w')
         og_blens = get_blengths(og_ds_tree, time_tree)
         standard_dic = {}
         trait_dic = get_blengths(PhyloTree(trait_tree), time_tree)
         traits_list = []
         blens_list = []
-        for k, v in og_blens.items():
+        for k, v in list(og_blens.items()):
             standard_dic[k] = v / time_blengths[k]
             traits_list.append(trait_dic[k])
             blens_list.append(standard_dic[k])
@@ -2956,15 +2956,15 @@ def ds_time_correlations(og_list, indir, outdir, calib_tree, trait_tree, og_ds_d
     trait_dic = get_blengths(PhyloTree(trait_tree), time_tree)
 
     for iternum in range(0,1):
-        print iternum
+        print(iternum)
         rando_rhos = []
-        traits_list = trait_dic.values()
+        traits_list = list(trait_dic.values())
         random.shuffle(traits_list)
-        for og, og_ds_tree in og_ds_dic.items():
+        for og, og_ds_tree in list(og_ds_dic.items()):
             og_blens = get_blengths(og_ds_tree, time_tree)
             standard_dic = {}
             blens_list = []
-            for k, v in og_blens.items():
+            for k, v in list(og_blens.items()):
                 standard_dic[k] = v / time_blengths[k]
                 blens_list.append(standard_dic[k])
 
@@ -2978,10 +2978,10 @@ def ds_time_correlations(og_list, indir, outdir, calib_tree, trait_tree, og_ds_d
         random_file.flush()
         rando_rho_dic[iternum] = iter_med
     random_file.close()
-    print numpy.median(rho_dic.values())
-    print numpy.median(rando_rho_dic.values())
-    print numpy.max(rando_rho_dic.values())
-    print numpy.min(rando_rho_dic.values())
+    print(numpy.median(list(rho_dic.values())))
+    print(numpy.median(list(rando_rho_dic.values())))
+    print(numpy.max(list(rando_rho_dic.values())))
+    print(numpy.min(list(rando_rho_dic.values())))
 
 
 def bootstrapping_ds_time_correlations(og_list, indir, outdir, calib_tree, trait_tree, bootstrap_taxa, categorical):       
@@ -2995,7 +2995,7 @@ def bootstrapping_ds_time_correlations(og_list, indir, outdir, calib_tree, trait
         leaf_list.append(leaf.name)
 
     for taxon in leaf_list:
-        print taxon
+        print(taxon)
         cur_leaf_list = []
         for leaf in leaf_list:
             if leaf != taxon:
@@ -3007,7 +3007,7 @@ def bootstrapping_ds_time_correlations(og_list, indir, outdir, calib_tree, trait
         boot_trait_tree.prune(cur_leaf_list)
         boot_trait_tree = boot_trait_tree.write(format = 5)
         taxon_og_ds_dic = {}
-        for og, ds_tree in og_ds_dic.items():
+        for og, ds_tree in list(og_ds_dic.items()):
             cur_tree = copy.deepcopy(ds_tree)
             cur_tree.prune(cur_leaf_list)
             taxon_og_ds_dic[og] = cur_tree
@@ -3023,22 +3023,22 @@ def marine_test(phylo_dic, full_tree, fore_list, exclude_list, outdir):
     gw_blengths = {}
     og_blengths = {}
     p_dic = {}
-    for cur_og, og_phylo in phylo_dic.items():
+    for cur_og, og_phylo in list(phylo_dic.items()):
         cur_blengths = get_blengths(og_phylo, full_phylo)
         og_blengths[cur_og] = cur_blengths
-        for name, dist in cur_blengths.items():
-            if name not in gw_blengths.keys():
+        for name, dist in list(cur_blengths.items()):
+            if name not in list(gw_blengths.keys()):
                 gw_blengths[name] = []
             gw_blengths[name].append(dist)
     mean_blengths = {}
-    for name, dist_list in gw_blengths.items():
+    for name, dist_list in list(gw_blengths.items()):
         mean_blengths[name] = numpy.median(dist_list)
     og_list = []
     test_results_p = []
     in_mean_dic = {}
     out_mean_dic = {}
 
-    for cur_og, cur_blengths in og_blengths.items():
+    for cur_og, cur_blengths in list(og_blengths.items()):
         p_val, in_mean, out_mean = wilcox_test(cur_blengths, mean_blengths, fore_list, exclude_list)
         if p_val:
             og_list.append(cur_og)
@@ -3046,7 +3046,7 @@ def marine_test(phylo_dic, full_tree, fore_list, exclude_list, outdir):
             in_mean_dic[cur_og] = in_mean
             out_mean_dic[cur_og] = out_mean
             p_dic[cur_og] = p_val
-    for node, dist_list in gw_blengths.items():
+    for node, dist_list in list(gw_blengths.items()):
         outfile = open("%s/%s_blens.txt" % (outdir, node), 'w')
         for blen in dist_list:
             outfile.write("%s\n" % (blen))
@@ -3056,7 +3056,7 @@ def marine_test(phylo_dic, full_tree, fore_list, exclude_list, outdir):
     p_dic = {}
     for x in range(len(pval_corr)):
         p_dic[og_list[x]] = pval_corr[x]
-    sorted_pvals = sorted(p_dic.items(), key = lambda x: x[1])
+    sorted_pvals = sorted(list(p_dic.items()), key = lambda x: x[1])
     outfile = open("%s/marine_tests.txt" % outdir, 'w')
     outfile.write("OG\tpval\t\n")
     for pval in sorted_pvals:
@@ -3066,7 +3066,7 @@ def marine_test(phylo_dic, full_tree, fore_list, exclude_list, outdir):
 def wilcox_test(blength_dic, standard_dic, fore_list, exclude_list):
     ingroup = []
     outgroup = []
-    for name, dist in blength_dic.items():
+    for name, dist in list(blength_dic.items()):
         if dist < 0.00001:
             continue
 #        if standard_dic[name] < 4:
@@ -3093,7 +3093,7 @@ def wilcox_test(blength_dic, standard_dic, fore_list, exclude_list):
 def kendall_test(blength_dic, standard_dic, fore_list, exclude_list):
     ingroup = []
     outgroup = []
-    for name, dist in blength_dic.items():
+    for name, dist in list(blength_dic.items()):
         if dist < 0.00001:
             continue
 #        if standard_dic[name] < 4:
@@ -3156,7 +3156,7 @@ def get_blengths(og_phylo, full_tree):
                                     grand_par_good = True
                                     break
             if sibling_good and grand_par_good:
-                if node.name not in blength_dic.keys():
+                if node.name not in list(blength_dic.keys()):
                     blength_dic[node.name] = og_phylo.get_leaves_by_name(node.name)[0].dist
         else:
             node_count += 1
@@ -3196,7 +3196,7 @@ def get_blengths(og_phylo, full_tree):
                     for og_leaf in og_phylo.get_leaves():
                         if leaf.name == og_leaf.name:
                             leaf_list.append(leaf.name)
-                if node_count not in blength_dic.keys():
+                if node_count not in list(blength_dic.keys()):
                     blength_dic[node_count] = og_phylo.get_common_ancestor(leaf_list).dist
     return blength_dic
 """
@@ -3325,7 +3325,7 @@ def paml_test(og_list, foreground, test_type, indir, outdir, phylogeny_file, num
         elif test_type == "free":
             no_stops = prep_paml_files(cur_og, indir, outdir, "free", phylogeny_file, test_type, min_taxa, use_gblocks, exclude_taxa)
             if not no_stops:
-                print "OG %s appears to have unexpected stop codons" % cur_og
+                print("OG %s appears to have unexpected stop codons" % cur_og)
                 continue
         elif test_type == "ancestral":
             if foreground == "ncar":
@@ -3366,7 +3366,7 @@ def paml_test(og_list, foreground, test_type, indir, outdir, phylogeny_file, num
 #        paml_tests.ncar_ancestor_reconstruction([cur_og, outdir])
 
             work_list.append([cur_og, outdir])
-    print work_list
+    print(work_list)
 #        paml_tests.relax_worker([cur_og, outdir])
 #        paml_tests.absrel_worker([cur_og, outdir])
 #        paml_tests.aaml_worker([cur_og, outdir])
@@ -3411,7 +3411,7 @@ def baseml_worker(param_list):
     file_info = ncar.split("_")
     if not os.path.exists("%s/ncar_%s.afa.trimal" % (aligndir, ncar)):
         if os.path.exists("%s/ncar_%s.afa" % (aligndir, ncar)):
-            print "trimal failed on %s. Continuing with next locus." % ncar
+            print("trimal failed on %s. Continuing with next locus." % ncar)
             return
     reader = SeqIO.parse("%s/ncar_%s.afa.trimal" % (aligndir, ncar), format = 'fasta')
     seq_dic = {}
@@ -3419,7 +3419,7 @@ def baseml_worker(param_list):
         seq_dic[rec.id] = str(rec.seq)
     outfile = open("%s/%s.afa" % (outdir, ncar), 'w')
     taxa_list = []
-    for seq_name, seq in seq_dic.items():
+    for seq_name, seq in list(seq_dic.items()):
         cur_taxa = seq_name.split(".")[0]
         if cur_taxa not in remove_list:
             taxa_list.append(cur_taxa)
@@ -3439,7 +3439,7 @@ def baseml_worker(param_list):
     except:
         if os.path.exists("%s/%s.alt" % (outdir, ncar)):
             os.remove("%s/%s.alt" % (outdir, ncar))
-        print "%s experienced an error" % ncar
+        print("%s experienced an error" % ncar)
 
 def basic_gff(gff_file):
     reader = open(gff_file, 'rU')
@@ -3459,7 +3459,7 @@ def neighbor_genes(target, coding_dic):
     cur_mid = (cur_end + cur_start) / 2.0
     cur_dir = target[3]
     back_list = []
-    for gene, coords in coding_dic.items():
+    for gene, coords in list(coding_dic.items()):
         gene_chr = coords[0]
         gene_start = coords[1]
         gene_end = coords[2]
@@ -3506,20 +3506,20 @@ def neighbor_fourfs(ancestral_dir, back_list, species_list, outfile):
 #                    these_species.append(cur_id)
                 seq_line = False
         if len(og_dic) == len(species_list):
-            for species, seq in og_dic.items():
+            for species, seq in list(og_dic.items()):
                 full_dic[species].append(seq)
             seq_count += 1
             seq_len += len(seq)
             
     writer = open(outfile, 'w')
-    for species, seq_list in full_dic.items():
+    for species, seq_list in list(full_dic.items()):
         writer.write(">%s\n%s\n" % (species, "".join(seq_list)))
     writer.close()
     return seq_count
 
 def inspecies_ncar_translate(ncar_ortho_dic, inspecies, inspecies_gff):
     inspecies_dic = {}
-    for ncar, loci_dic in ncar_ortho_dic.items():
+    for ncar, loci_dic in list(ncar_ortho_dic.items()):
         cur_ncar = loci_dic.get(inspecies, False)
         if cur_ncar:
             inspecies_dic[ncar] = inspecies_gff[cur_ncar]
@@ -3554,14 +3554,14 @@ def hyphy_noncoding_worker(param_list):
     file_info = ncar.split("_")
     if not os.path.exists("%s/ncar_%s.afa.trimal" % (aligndir, ncar)):
         if os.path.exists("%s/ncar_%s.afa" % (aligndir, ncar)):
-            print "trimal failed on %s. Continuing with next locus." % ncar
+            print("trimal failed on %s. Continuing with next locus." % ncar)
             return
-    print ncar
+    print(ncar)
 #    print "getting neighbors"
     neighbors = neighbor_genes(target_coord, coding_coords)
 #    print "neighbors gotten"
     if len(neighbors) < 4:
-        print "too few neighbors: %s" % ncar
+        print("too few neighbors: %s" % ncar)
         return
     neighbor_ogs = []
     for neighbor in neighbors:
@@ -3574,7 +3574,7 @@ def hyphy_noncoding_worker(param_list):
                 neighbor_ogs.append(og_num)
 
     if len(neighbor_ogs) < 4:
-        print "too few neighbors: %s" % ncar
+        print("too few neighbors: %s" % ncar)
         return
     reader = SeqIO.parse("%s/ncar_%s.afa.trimal" % (aligndir, ncar), format = 'fasta')
     seq_dic = {}
@@ -3586,7 +3586,7 @@ def hyphy_noncoding_worker(param_list):
     outfile = open("%s/hyphy_%s/%s.afa" % (outdir, ncar, ncar), 'w')
     taxa_list = []
 
-    for seq_name, seq in seq_dic.items():
+    for seq_name, seq in list(seq_dic.items()):
         cur_taxa = seq_name.split(".")[0]
         if cur_taxa not in remove_list:
             taxa_list.append(cur_taxa)
@@ -3595,7 +3595,7 @@ def hyphy_noncoding_worker(param_list):
 
     num_neighbors = neighbor_fourfs(ancestral_dir, neighbor_ogs, taxa_list, "%s/hyphy_%s/%s_fourf.afa" % (outdir, ncar, ncar))
     if num_neighbors < 4:
-        print "too few neighbors: %s" % ncar
+        print("too few neighbors: %s" % ncar)
         return
 
     tree = PhyloTree(treefile)
@@ -3842,7 +3842,7 @@ def read_baseml_phylos(ncar_list, indir, outdir, outfile):
     output = open("%s/%s" % (outdir, outfile), 'w')
     for ncar in ncar_list:
         if not os.path.exists("%s/%s.alt" % (indir, ncar)):
-            print "%s/%s.alt is missing" % (indir, ncar)
+            print("%s/%s.alt is missing" % (indir, ncar))
             continue
         cur_blens = read_baseml_blengths("%s/%s.alt" % (indir, ncar))
         if cur_blens == "NA":
@@ -3925,9 +3925,9 @@ def count_fourfold(seq1, seq2, in_gene, out_gene):
                 if seq1[x+2] != seq2[x+2]:
                     in_alt_list = [seq1[x+2]]
                     out_alt_list = [seq2[x+2]]
-                    if x+2 in in_gene_alt_dic.keys():
+                    if x+2 in list(in_gene_alt_dic.keys()):
                         in_alt_list.append(in_gene_alt_dic[x+2])
-                    if x+2 in out_gene_alt_dic.keys():
+                    if x+2 in list(out_gene_alt_dic.keys()):
                         out_alt_list.append(out_gene_alt_dic[x+2])
                     overlap = False
                     for nuc in in_alt_list:
@@ -3953,7 +3953,7 @@ def count_ingene_fourfold(seq1, seq2, in_gene):
                 if seq1[x+2] != seq2[x+2]:
                     in_alt_list = [seq1[x+2]]
                     out_alt_list = [seq2[x+2]]
-                    if x+2 in in_gene_alt_dic.keys():
+                    if x+2 in list(in_gene_alt_dic.keys()):
                         in_alt_list.append(in_gene_alt_dic[x+2])
                     overlap = False
                     for nuc in in_alt_list:
@@ -4097,7 +4097,7 @@ def fsa_align_worker(param_list):
             subprocess.call(cmd, stdout = outfile, stderr = FNULL)
 #        gblock("%s/ncar_%s.afa" % (outdir, og_num))
         trimal_automated("%s/ncar_%s.afa" % (outdir, og_num), "%s/ncar_%s.afa.trimal" % (outdir, og_num))
-    print "%s alignment complete" % og_num
+    print("%s alignment complete" % og_num)
     return
 
 def jarvis_filtering(og_list, indir, outdir, len_min, num_threads):
@@ -4118,11 +4118,11 @@ def sequence_gap_filtering_worker(infile, originalfile, noparafile, outfile, cur
     seq_dic = {}
     for rec in reader:
         seq_dic[rec.id] = str(rec.seq)
-    taxa_list = [seq[0:4] for seq in seq_dic.keys()]
+    taxa_list = [seq[0:4] for seq in list(seq_dic.keys())]
     new_seq_list = []
     seqfilt_taxa = []
     seqfilt_seqs = []
-    for seq_name, seq in seq_dic.items():
+    for seq_name, seq in list(seq_dic.items()):
         cur_seq = str(seq).replace("-","").replace("N", "")
         if len(cur_seq) >= min_seq_len: #check min_seq_len
             if len(cur_seq) >= len(original_seqs[seq_name])*min_seq_prop_kept: #check that at least some fraction (min_seq_prop_kept) of the original sequence is retained in the filtered alignment
@@ -4185,7 +4185,7 @@ def alignment_column_filtering_worker(param_list):#infile, outfile, cur_og, noga
     infile = param_list[0]
     outfile = param_list[1]
     cur_og = param_list[2]
-    print cur_og
+    print(cur_og)
     nogap_min_count = param_list[3]
     nogap_min_prop = param_list[4]
     nogap_min_taxa = param_list[5]
@@ -4216,7 +4216,7 @@ def alignment_column_filtering_worker(param_list):#infile, outfile, cur_og, noga
         for rec in align:
             new_seq_dic[rec.id].append(rec[column])
     outfile = open(outfile, 'w')
-    for k, v in new_seq_dic.items():
+    for k, v in list(new_seq_dic.items()):
         outfile.write(">%s\n%s\n" % (k, "".join(v)))
     outfile.close()
     
@@ -4287,7 +4287,7 @@ def get_PGRAants_cds(base_dir):
 
 def get_cds_files(cds_dic):
     seq_dic = {}
-    for k, v in cds_dic.items():
+    for k, v in list(cds_dic.items()):
         reader = SeqIO.parse(v, format = 'fasta')
         seq_dic[k] = {}
         for rec in reader:
@@ -4383,19 +4383,19 @@ def write_orthogroups(ortho_dic, seq_dic, outdir, indexfile, min_taxa):
     ref_file.write("#og\tnum_taxa\tnum_seqs\n")
     counter = 0
     noparas_ortho_dic = {}
-    for og, gene_dic in ortho_dic.items():
+    for og, gene_dic in list(ortho_dic.items()):
         noparas_ortho_dic[og] = {}
-        for cur_species, genes in gene_dic.items():
+        for cur_species, genes in list(gene_dic.items()):
             if "," not in genes[0]:
                 noparas_ortho_dic[og][cur_species] = genes[0]
-    for og, gene_dic in noparas_ortho_dic.items():
-        if len(gene_dic.keys()) < min_taxa:
+    for og, gene_dic in list(noparas_ortho_dic.items()):
+        if len(list(gene_dic.keys())) < min_taxa:
             continue
-        ref_file.write("%s\t%s\t%s\n" % (og, len(gene_dic.keys()), len(gene_dic.keys())))
+        ref_file.write("%s\t%s\t%s\n" % (og, len(list(gene_dic.keys())), len(list(gene_dic.keys()))))
         outfile = open("%s/og_cds_%s.fa" % (outdir, og), 'w')
         protfile = open("%s_prots/og_cds_%s.faa" % (outdir, og), 'w')
         
-        for cur_species, genes in gene_dic.items():
+        for cur_species, genes in list(gene_dic.items()):
             outfile.write(">%s\n%s\n" % (genes, seq_dic[cur_species][genes].upper()))
             protfile.write(">%s\n%s\n" % (genes, str(Seq.Seq(seq_dic[cur_species][genes].upper()).translate())))
         outfile.close()
@@ -4418,24 +4418,24 @@ def write_orthoparagroups(ortho_dic, seq_dic, outdir, indexfile, min_taxa):
     ref_file.write("#og\tnum_taxa\tnum_seqs\n")
     counter = 0
     paras_ortho_dic = {}
-    for og, gene_dic in ortho_dic.items():
+    for og, gene_dic in list(ortho_dic.items()):
         paras_ortho_dic[og] = {}
-        for cur_species, genes in gene_dic.items():
+        for cur_species, genes in list(gene_dic.items()):
 #            if "," in genes[0]:
             paras_ortho_dic[og][cur_species] = genes[0].split(",")
-    for og, gene_dic in paras_ortho_dic.items():
+    for og, gene_dic in list(paras_ortho_dic.items()):
         gene_dic = remove_shorter_seqs(gene_dic, seq_dic)
-        if len(gene_dic.keys()) < min_taxa:
+        if len(list(gene_dic.keys())) < min_taxa:
             continue
         outfile = open("%s/og_cds_%s.fa" % (outdir, og), 'w')
         protfile = open("%s_prots/og_cds_%s.faa" % (outdir, og), 'w')
         seq_count = 0        
-        for cur_species, genes in gene_dic.items():
+        for cur_species, genes in list(gene_dic.items()):
             for gene in genes:
                 seq_count += 1
                 outfile.write(">%s\n%s\n" % (gene, seq_dic[cur_species][gene].upper()))
                 protfile.write(">%s\n%s\n" % (gene, str(Seq.Seq(seq_dic[cur_species][gene].upper()).translate())))
-        ref_file.write("%s\t%s\t%s\n" % (og, len(gene_dic.keys()), seq_count))
+        ref_file.write("%s\t%s\t%s\n" % (og, len(list(gene_dic.keys())), seq_count))
         outfile.close()
         protfile.close()
     ref_file.close()
@@ -4443,12 +4443,12 @@ def write_orthoparagroups(ortho_dic, seq_dic, outdir, indexfile, min_taxa):
 def remove_shorter_seqs(gene_dic, seq_dic):
     seq_lens = []
     new_gene_dic = []
-    for species, gene_list in gene_dic.items():
+    for species, gene_list in list(gene_dic.items()):
         for gene in gene_list:
             seq_lens.append(len(seq_dic[species][gene]))
     av_len = numpy.median(seq_lens)
     gene_count = 0
-    for species, gene_list in gene_dic.items(): #remove any gene less than half the median length
+    for species, gene_list in list(gene_dic.items()): #remove any gene less than half the median length
         new_genes = []
         for gene in gene_list:
             if len(seq_dic[species][gene]) > av_len / 2.0:
@@ -4458,7 +4458,7 @@ def remove_shorter_seqs(gene_dic, seq_dic):
             gene_dic[species] = new_genes
         else:
             gene_dic.pop(species)
-    if gene_count < 1.5*len(gene_dic.keys()): #only keep orthogroups with less than 1.5*(the number of species). otherwise return an empty dic.
+    if gene_count < 1.5*len(list(gene_dic.keys())): #only keep orthogroups with less than 1.5*(the number of species). otherwise return an empty dic.
         return gene_dic
     else:
         return {}
@@ -4482,10 +4482,10 @@ def concatenate_for_raxml(input_dir, outfile, og_list, species_list):
             full_dic[cur_species].append(str(cur_seq))
         seq_count += 1
         seq_len += len(cur_seq)
-    print "total genes used: " + str(seq_count)
+    print("total genes used: " + str(seq_count))
     writer = open(outfile, 'w')
     writer.write("%s %s\n" % (len(SPECIES_LIST), seq_len))
-    for species, seq_list in full_dic.items():
+    for species, seq_list in list(full_dic.items()):
         writer.write("%s\n%s\n" % (species, "".join(seq_list)))
     writer.close()
 
@@ -4521,10 +4521,10 @@ def concatenate_fourf_for_raxml(ancestral_dir, outfile, og_list, species_list):
                 seq_line = False
         seq_count += 1
         seq_len += len(cur_seq)
-    print "total genes used: " + str(seq_count)
+    print("total genes used: " + str(seq_count))
     writer = open(outfile, 'w')
     writer.write("%s %s\n" % (len(SPECIES_LIST), seq_len))
-    for species, seq_list in full_dic.items():
+    for species, seq_list in list(full_dic.items()):
         writer.write("%s\n%s\n" % (species, "".join(seq_list)))
     writer.close()
 
@@ -4554,8 +4554,8 @@ def gene_tree_worker(param_list):
         seq_dic[rec.id] = str(rec.seq)
         seqlen = len(str(rec.seq))
     outfile = open("%s/og_cds_%s.afa" % (outdir, og), 'w')
-    outfile.write("%s %s\n" % (len(seq_dic.keys()), seqlen))
-    for k, v in seq_dic.items():
+    outfile.write("%s %s\n" % (len(list(seq_dic.keys())), seqlen))
+    for k, v in list(seq_dic.items()):
         outfile.write("%s\n%s\n" % (k[0:4], v))
     outfile.close()
     switch_dir = os.getcwd()
@@ -4579,8 +4579,8 @@ def protein_tree_worker(param_list):
         seq_dic[rec.id] = str(rec.seq).replace("-", "N")
         seqlen = len(str(rec.seq))
     outfile = open("%s/og_cds_%s.afa" % (outdir, og), 'w')
-    outfile.write("%s %s\n" % (len(seq_dic.keys()), seqlen / 3))
-    for k, v in seq_dic.items():
+    outfile.write("%s %s\n" % (len(list(seq_dic.keys())), seqlen / 3))
+    for k, v in list(seq_dic.items()):
         outfile.write("%s\n%s\n" % (k[0:4], str(Seq.Seq(v).translate())))
     outfile.close()
     switch_dir = os.getcwd()
@@ -4607,7 +4607,7 @@ def discordance_worker(param_list):
     #paralogous sequences are removed be default. I don't know
     #what purpose this would serve if we weren't removing them.
     og = param_list[0]
-    print og
+    print(og)
     aligndir = param_list[1]
     genetreedir = param_list[2]
     outdir = param_list[3]
@@ -4680,7 +4680,7 @@ def read_discordance(consel_dir, og_list, outpath):
     pval_corr = smm.multipletests(p_list, alpha = 0.05, method = 'fdr_i')[1]
     for x in range(len(pval_corr)):
         p_dic[og_list[x]] = pval_corr[x]
-    sorted_pvals = sorted(p_dic.items(), key = lambda x: x[1])
+    sorted_pvals = sorted(list(p_dic.items()), key = lambda x: x[1])
     for pval in sorted_pvals:
         outfile.write("%s\t%s\t%s\t%s\t%s\n" % (pval[0], uncorr_dic[pval[0]], pval[1], num_taxa_dic[pval[0]], seq_len_dic[pval[0]]))
         outfile.flush()
@@ -4739,7 +4739,7 @@ def remove_aligned_paras(og_list, indir, outdir, parafree_index):
             seq_dic[rec.id] = str(rec.seq)
         outfile = open("%s/og_cds_%s.afa" % (outdir, og), 'w')
         seq_list = []
-        for seq_name, seq in seq_dic.items():
+        for seq_name, seq in list(seq_dic.items()):
             cur_species = seq_name[0:4]
             if species_list.count(cur_species) == 1:
                 outfile.write(">%s\n%s\n" % (seq_name, seq))
@@ -4808,19 +4808,19 @@ def parse_conserved_noncoding(blastfile):
         out_tuple = (int(cur_line[6]), int(cur_line[7]))
         in_tuple = (int(cur_line[8]), int(cur_line[9]))
         coord_pairs[in_tuple] = out_tuple
-    if len(coord_pairs.keys()) == 0:
+    if len(list(coord_pairs.keys())) == 0:
         return (-1, -1), (-1, -1)
-    in_tuple_list = coord_pairs.keys()
-    for in_coords in coord_pairs.keys():
+    in_tuple_list = list(coord_pairs.keys())
+    for in_coords in list(coord_pairs.keys()):
         in_tuple_list = overlap(in_coords, in_tuple_list)
-    out_tuple_list = coord_pairs.values()
+    out_tuple_list = list(coord_pairs.values())
  #   for out_coords in coord_pairs.values():
  #       out_tuple_list = overlap(out_coords, out_tuple_list)
     longest_intuple = in_tuple_list[0]
     for in_tuple in in_tuple_list:
         if (in_tuple[1]-in_tuple[0]) > (longest_intuple[1] - longest_intuple[0]):
             longest_intuple = in_tuple
-    for intuple in coord_pairs.keys():
+    for intuple in list(coord_pairs.keys()):
         if intuple[0] == longest_intuple[0]:
             starttuple = intuple
         if intuple[1] == longest_intuple[1]:
@@ -5062,7 +5062,7 @@ def compile_ancestrals(og_list, indir, aligndir, outdir):
     species_fourf_vars = {}
     window_metrics = {}
     for og_num in og_list:
-        print og_num
+        print(og_num)
         node_index_dic, node_seqs = read_ancestral_seq("%s/og_%s_working/rst" % (indir, og_num))
         inseq_dic = {}
         reader = SeqIO.parse("%s/og_cds_%s.1.fas" % (aligndir, og_num), format = 'fasta')
@@ -5075,11 +5075,11 @@ def compile_ancestrals(og_list, indir, aligndir, outdir):
 
 #        print inseq_dic.keys()
 #        print node_seqs
-        for species, seq in inseq_dic.items():
+        for species, seq in list(inseq_dic.items()):
             cur_metric = window_metric(seq, node_seqs[nearest_anc[species]])
             syn_pos, nsyn_pos, fourf_pos = sub_positions(seq, node_seqs[nearest_anc[species]])
 #            syn_pos, nsyn_pos, fourf_pos = sub_positions(seq, inseq_dic["ECOL"])
-            if species not in species_syn_dists.keys():
+            if species not in list(species_syn_dists.keys()):
                 species_syn_dists[species] = []
                 species_nsyn_dists[species] = []
                 species_fourf_dists[species] = []
@@ -5110,7 +5110,7 @@ def compile_ancestrals(og_list, indir, aligndir, outdir):
 #            print species_syn_dists
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
-    for species in species_syn_dists.keys():
+    for species in list(species_syn_dists.keys()):
         outfile = open("%s/%s_nsyn_distances.txt" % (outdir, species), 'w')
         for distance in species_nsyn_dists[species]:
             outfile.write(str(distance) + "\n")
@@ -5221,10 +5221,10 @@ def sub_positions(inseq, ancestor):
 
 def get_nearest_anc(index_dic, inseq_dic):
     nearest_anc = {}
-    for inname in inseq_dic.keys():
+    for inname in list(inseq_dic.keys()):
         fewest_children = len(inseq_dic)
         smallest_node = -1
-        for index, children in index_dic.items():
+        for index, children in list(index_dic.items()):
             if inname in children:
                 if len(children) <= fewest_children:
                     fewest_children = len(children)
@@ -5309,7 +5309,7 @@ def min_taxa_membership(manda_dic, multi_dic, remove_list, index_file, min_taxa,
             taxa_noparas = [taxa for taxa in taxa_list if taxa_list.count(taxa)<2]
         else:
             taxa_noparas = list(set(taxa_list))
-        for these_taxa, min_count in manda_dic.items():
+        for these_taxa, min_count in list(manda_dic.items()):
             mycount = 0
             for this_taxon in these_taxa:
                 if this_taxon in taxa_noparas:
@@ -5319,7 +5319,7 @@ def min_taxa_membership(manda_dic, multi_dic, remove_list, index_file, min_taxa,
                 break
         if not include:
             continue
-        for these_sets, min_count in multi_dic.items():
+        for these_sets, min_count in list(multi_dic.items()):
             mycount = 0
             for this_set in these_sets:
                 set_total = 0
@@ -5356,7 +5356,7 @@ def ncar_min_taxa_membership(manda_dic, multi_dic, remove_list, index_file, min_
             taxa_noparas = [taxa for taxa in taxa_list if taxa_list.count(taxa)<2]
         else:
             taxa_noparas = list(set(taxa_list))
-        for these_taxa, min_count in manda_dic.items():
+        for these_taxa, min_count in list(manda_dic.items()):
             mycount = 0
             for this_taxon in these_taxa:
                 if this_taxon in taxa_noparas:
@@ -5367,7 +5367,7 @@ def ncar_min_taxa_membership(manda_dic, multi_dic, remove_list, index_file, min_
 
         if not include:
             continue
-        for these_sets, min_count in multi_dic.items():
+        for these_sets, min_count in list(multi_dic.items()):
             mycount = 0
             for this_set in these_sets:
                 set_total = 0
@@ -5414,10 +5414,10 @@ def make_go_database(ortho_dic, data_species, outpath, gaf_file):
     used_ogs = {}
     used_gos = {}
     for species in data_species:
-        print species
+        print(species)
         species_dic = {}
-        for k, v in ortho_dic.items():
-            if species in v.keys():
+        for k, v in list(ortho_dic.items()):
+            if species in list(v.keys()):
                 species_dic[v[species][0]] = k
 #        reader = open("/Genomics/kocherlab/berubin/annotation/interproscan/%s.gaf" % species, 'rU')
 #        reader = open("/Genomics/kocherlab/berubin/acacias/selection/gilliamella/interproscan/%s.gaf" % species, 'rU')
@@ -5425,10 +5425,10 @@ def make_go_database(ortho_dic, data_species, outpath, gaf_file):
         reader = open(gaf_file, 'rU')
         for line in reader:
             cur_gene = line.split()[1]
-            if cur_gene in species_dic.keys():
+            if cur_gene in list(species_dic.keys()):
                 cur_og = species_dic[cur_gene]
                 cur_go = line.split()[3]                
-                if cur_og not in used_gos.keys():
+                if cur_og not in list(used_gos.keys()):
                     used_gos[cur_og] = []
                     used_ogs[cur_og] = []
                 if cur_go not in used_gos[cur_og]:
@@ -5441,7 +5441,7 @@ def make_go_database(ortho_dic, data_species, outpath, gaf_file):
 #                if cur_og not in used_ogs.keys():
 #                    used_ogs[cur_og] = line.replace(cur_gene, str(cur_og))
 #                    print cur_og
-    for og, outline_list in used_ogs.items():
+    for og, outline_list in list(used_ogs.items()):
         for outline in outline_list:
             outfile.write(outline)
         og_file.write("%s\n" % og)
@@ -5503,8 +5503,8 @@ def hypergeom_test(population_file, pop_condition_file, target_file, target_back
 #    print "Subset with condition: %s" % x
 #    print "Probability this many or more: %s" % pval
 #    print "Fold-enrichment: %s" % (folde)
-    print "M,n,N,x,p,fe: %s,%s,%s,%s,%s,%s" % (M, n, N, x, pval, folde)
-    print "Genes overlapping: %s" % (",".join(target_condition_genes))
+    print("M,n,N,x,p,fe: %s,%s,%s,%s,%s,%s" % (M, n, N, x, pval, folde))
+    print("Genes overlapping: %s" % (",".join(target_condition_genes)))
 
 # def hypergeom(population_file, pop_condition_file, subset_file, ortho_dic, outlier_num):
 #     reader = open(population_file, 'rU')
@@ -5623,7 +5623,7 @@ def rer_hypergeom_test(population_file, pop_condition_file, rer_file, outlier_nu
     x = len(target_condition_genes)
     pval = scipy.stats.hypergeom.sf(x-1, M, n, N)
     folde = (float(x) / N) / (float(n) / M)
-    print "Direction,pcut: %s,%s" % (fast_or_slow, pcut)
+    print("Direction,pcut: %s,%s" % (fast_or_slow, pcut))
 #    print "Total population: %s" % M
 #    print "Total population with condition: %s" % n
 #    print "Subset of population: %s" % N
@@ -5631,8 +5631,8 @@ def rer_hypergeom_test(population_file, pop_condition_file, rer_file, outlier_nu
 #    print "Probability this many or more: %s" % pval
 #    print "Fold-enrichment: %s" % (folde)
 #    print ",".join(target_condition_genes)
-    print "M,n,N,x,p,fe: %s,%s,%s,%s,%s,%s" % (M, n, N, x, pval, folde)
-    print "Genes overlapping: %s" % (",".join(target_condition_genes))
+    print("M,n,N,x,p,fe: %s,%s,%s,%s,%s,%s" % (M, n, N, x, pval, folde))
+    print("Genes overlapping: %s" % (",".join(target_condition_genes)))
     
 
 def rer_hypergeom(population_file, pop_condition_file, subset_file, ortho_dic, outlier_num, pcut, fast_or_slow, outfile):
@@ -5665,7 +5665,7 @@ def rer_hypergeom(population_file, pop_condition_file, subset_file, ortho_dic, o
     pop_cond_list = []
     for line in reader:
         cur_gene = line.split()[0]
-        if cur_gene in gene_og_dic.keys():
+        if cur_gene in list(gene_og_dic.keys()):
             pop_cond_list.append(gene_og_dic[cur_gene])
     reader = open(subset_file, 'rU')
     subset_list = []
@@ -5771,7 +5771,7 @@ def goatools_termfinder(forelist, backlist, database_file, go_dir):
     pval_corr = smm.multipletests(p_list, alpha = 0.05, method = 'fdr_bh')[1]
     for x in range(len(pval_corr)):
         p_dic[go_list[x]] = pval_corr[x]
-    sorted_pvals = sorted(p_dic.items(), key = lambda x: x[1])
+    sorted_pvals = sorted(list(p_dic.items()), key = lambda x: x[1])
     outfile = open("%s_filtered_ps.txt" % go_dir, 'w')
     outfile.write("GOterm\tpval\tFDR_p\tNS\tenrichm\tname\tratio_in_study\tratio_in_pop\tdepth\tstudy_count\tstudy_items\n")
     for pval in sorted_pvals:
@@ -5812,7 +5812,7 @@ def run_termfinder(forelist, backlist, database_file, ortho_dic, go_dir):
     fore_file.close()
 #    cmd = ["/Genomics/kocherlab/berubin/local/src/GO-TermFinder-0.86/examples/analyze.pl", "%s/testing_db.gaf" % go_dir, str(len(good_backs)), "/Genomics/kocherlab/berubin/annotation/interproscan/go-basic.obo", "%s/forelist.txt" % (go_dir)]
     cmd = ["/Genomics/kocherlab/berubin/local/src/GO-TermFinder-0.86/examples/analyze.pl", "%s/testing_db.gaf" % go_dir, str(len(good_backs)), "/Genomics/kocherlab/berubin/annotation/trinotate/go-basic_7_24_18.obo", "%s/forelist.txt" % (go_dir)]
-    print cmd
+    print(cmd)
     subprocess.call(cmd)
     reader = open("%s/forelist.txt.terms" % (go_dir), 'rU')
     cp_file = open("%s.txt" % go_dir, 'w')
@@ -5864,7 +5864,7 @@ def run_termfinder(forelist, backlist, database_file, ortho_dic, go_dir):
             readogs = False
             inog = False
     cp_file.close()
-    sorted_ps = sorted(uncorp_dic.items(), key = lambda x: x[1])
+    sorted_ps = sorted(list(uncorp_dic.items()), key = lambda x: x[1])
     for go_ps in sorted_ps:
         pval_file.write("%s\t%s\t%s\t%s\t%s\n" % (go_ps[0].replace("_", ":"), round(p_dic[go_ps[0]], 8), round(go_ps[1],8), frac_dic[go_ps[0]], term_dic[go_ps[0]]))
     pval_file.close()
@@ -5969,7 +5969,7 @@ def yn_estimates(og_list,indir, outdir, tree_file, min_taxa, use_gblocks, remove
     species_pairs = []
     for cur_og in og_list:
         good_align = prep_paml_files(cur_og, indir, outdir, "yn", tree_file, "yn", min_taxa, use_gblocks, remove_list)
-        print cur_og
+        print(cur_og)
         if not good_align:
             continue
         if good_align == "too short":
@@ -5977,14 +5977,14 @@ def yn_estimates(og_list,indir, outdir, tree_file, min_taxa, use_gblocks, remove
         try: #had to put this in because sometimes yn just results in nans
             pair_dic = paml_tests.pairwise_yn(cur_og, outdir)
         except IndexError:
-            print "OG_%s failed for unknown reasons" % cur_og
+            print("OG_%s failed for unknown reasons" % cur_og)
             continue
   
 #        print pair_dic["SPRA"]["SLEU"]
         dnds_dic[cur_og] = {}
         dn_dic[cur_og] = {}
         ds_dic[cur_og] = {}
-        for gene in pair_dic.keys():
+        for gene in list(pair_dic.keys()):
             for other_gene in pair_dic[gene]:
                 species_tuple = (gene[0:4], other_gene[0:4])
                 reverse_tuple = (other_gene[0:4], gene[0:4])
@@ -6000,7 +6000,7 @@ def yn_estimates(og_list,indir, outdir, tree_file, min_taxa, use_gblocks, remove
                     dn_dic[cur_og][cur_tuple] = "NA"
                     ds_dic[cur_og][cur_tuple] = "NA"
                     continue
-                if cur_tuple not in dnds_dic[cur_og].keys() and reverse_tuple not in dnds_dic[cur_og].keys():
+                if cur_tuple not in list(dnds_dic[cur_og].keys()) and reverse_tuple not in list(dnds_dic[cur_og].keys()):
                     dnds_dic[cur_og][cur_tuple] = pair_dic[gene][other_gene]["YN00"]["omega"]
                     dn_dic[cur_og][cur_tuple] = pair_dic[gene][other_gene]["YN00"]["dN"]
                     ds_dic[cur_og][cur_tuple] = pair_dic[gene][other_gene]["YN00"]["dS"]
@@ -6009,8 +6009,8 @@ def yn_estimates(og_list,indir, outdir, tree_file, min_taxa, use_gblocks, remove
         dnfile = open("%s_results/%s_%s_dn.yn" % (outdir, species_pair[0], species_pair[1]), 'w')
         dsfile = open("%s_results/%s_%s_ds.yn" % (outdir, species_pair[0], species_pair[1]), 'w')
         for og_num in og_list:
-            if og_num in dnds_dic.keys():
-                if species_pair in dnds_dic[og_num].keys():
+            if og_num in list(dnds_dic.keys()):
+                if species_pair in list(dnds_dic[og_num].keys()):
                     outfile.write("%s\t%s\n" % (og_num, dnds_dic[og_num][species_pair]))
                     dnfile.write("%s\t%s\n" % (og_num, dn_dic[og_num][species_pair]))
                     dsfile.write("%s\t%s\n" % (og_num, ds_dic[og_num][species_pair]))
@@ -6030,7 +6030,7 @@ def gene_flanks(gff_file, genome_dic):
             cur_scaf = cur_line[0]
             gene_dic[cur_name] = (cur_scaf, cur_start, cur_end)
     flank_dic = {}
-    for gene_name, coords in gene_dic.items():
+    for gene_name, coords in list(gene_dic.items()):
         scaf_seq = genome_dic[coords[0]]
         start_coord = coords[1] - 2000
         end_coord = coords[2] + 2000
@@ -6049,7 +6049,7 @@ def codon_bias(outdir, species_list):
         os.mkdir("%s/codon_bias/" % (outdir))
     summary_file = open("%s/codon_bias/codon_bias.summ" % outdir, 'w')
     for target_species in species_list:
-        print target_species
+        print(target_species)
         if not os.path.isdir("%s/codon_bias/%s" % (outdir, target_species)):
             os.mkdir("%s/codon_bias/%s" % (outdir, target_species))
         if target_species == "LALB":
@@ -6076,7 +6076,7 @@ def codon_bias(outdir, species_list):
             outfile.write("%s\t%s\n" % (rec.id[:-3], ncp))
             outfile.flush()
         outfile.close()
-        summary_file.write("%s\t%s\n" % (target_species, numpy.mean(ncp_dic.values())))
+        summary_file.write("%s\t%s\n" % (target_species, numpy.mean(list(ncp_dic.values()))))
         summary_file.flush()
     summary_file.close()
         
@@ -6086,7 +6086,7 @@ def codon_bias(outdir, species_list, og_list, ortho_dic):
         os.mkdir("%s/codon_bias/" % (outdir))
     summary_file = open("%s/codon_bias/codon_bias.summ" % outdir, 'w')
     for target_species in species_list:
-        print target_species
+        print(target_species)
         if not os.path.isdir("%s/codon_bias/%s" % (outdir, target_species)):
             os.mkdir("%s/codon_bias/%s" % (outdir, target_species))
         if target_species == "LALB":
@@ -6120,7 +6120,7 @@ def codon_bias(outdir, species_list, og_list, ortho_dic):
 #            og_outfile.flush()
         outfile.close()
         og_outfile.close()
-        summary_file.write("%s\t%s\n" % (target_species, numpy.mean(ncp_dic.values())))
+        summary_file.write("%s\t%s\n" % (target_species, numpy.mean(list(ncp_dic.values()))))
         summary_file.flush()
     summary_file.close()
         
@@ -6132,7 +6132,7 @@ def read_hyphy_relax(og_list, indir, outdir, forestring):
     for cur_og in og_list:
 #        print cur_og
         if not os.path.exists("%s/og_%s_relax_unlabeledback.txt" % (indir, cur_og)):
-            print "%s/og_%s_relax_unlabeledback.txt is missing" % (indir, cur_og)
+            print("%s/og_%s_relax_unlabeledback.txt is missing" % (indir, cur_og))
             continue
         og_file =open("%s/og_%s_relax_unlabeledback.txt" % (indir, cur_og), 'rU')
         interpret_line = False
@@ -6153,7 +6153,7 @@ def read_hyphy_relax(og_list, indir, outdir, forestring):
                 k_list.append([cur_og, cur_k, cur_p, interpretation])
                 break
         if interpret_line == False:
-            print "missing %s" % cur_og
+            print("missing %s" % cur_og)
     pval_corr = smm.multipletests(p_list, alpha = 0.1, method = 'fdr_bh')[1]
     for x in range(len(pval_corr)):
         k_list[x].insert(3, pval_corr[x])
@@ -6169,15 +6169,15 @@ def read_hyphy_absrel(og_list, indir, outdir):
     k_list = []
     p_list = []
     for cur_og in og_list:
-        print cur_og
+        print(cur_og)
         if not os.path.exists("%s/og_cds_%s.afa.ABSREL.json" % (indir, cur_og)):
-            print "%s/og_cds_%s.afa.ABSREL.json is missing" % (indir, cur_og)
+            print("%s/og_cds_%s.afa.ABSREL.json is missing" % (indir, cur_og))
             continue
         cur_p_dic = {}
         with open("%s/og_cds_%s.afa.ABSREL.json" % (indir, cur_og), 'rU') as readfile:
             data = json.load(readfile)
         tree = PhyloTree(str(data["input"]["trees"]["0"]) + ";", format = 1)
-        for testname, testinfo in data["branch attributes"]["0"].items():
+        for testname, testinfo in list(data["branch attributes"]["0"].items()):
             corr_p = testinfo["Corrected P-value"]
             uncorr_p = testinfo["Uncorrected P-value"]
             omega = testinfo["Baseline MG94xREV omega ratio"]
@@ -6215,9 +6215,9 @@ def read_hyphy_noncoding(ncar_list, indir, outdir):
     p_list = []
     neg_list = []
     for cur_ncar in ncar_list:
-        print cur_ncar
+        print(cur_ncar)
         if not os.path.exists("%s/%s_noncodingselection_summary.txt" % (indir, cur_ncar)):
-            print "%s/%s_noncodingselection_summary.txt is missing" % (indir, cur_ncar)
+            print("%s/%s_noncodingselection_summary.txt is missing" % (indir, cur_ncar))
             continue
         ncar_file = open("%s/%s_noncodingselection_summary.txt" % (indir, cur_ncar), 'rU')
         for line in ncar_file:
@@ -6307,7 +6307,7 @@ def read_frees_subset(indir, outdir, database_file, go_dir, get_dn_ds, time_tree
             continue
         og_dnds_dic[cur_og] = dnds_dic
         if get_dn_ds:
-            taxa_pres = dn_dic.keys()
+            taxa_pres = list(dn_dic.keys())
             if len(taxa_pres) == 0:
                 continue
             if "Dnov" in taxa_pres:
@@ -6317,7 +6317,7 @@ def read_frees_subset(indir, outdir, database_file, go_dir, get_dn_ds, time_tree
             tree = PhyloTree(time_tree)
             tree.prune(taxa_pres, preserve_branch_length = True)
             dn_time_dic = standardize_to_time(dn_dic, tree)
-            taxa_pres = ds_dic.keys()
+            taxa_pres = list(ds_dic.keys())
             if "Dnov" in taxa_pres:
                 taxa_pres.remove("Dnov")
             if "Nmel" in taxa_pres:
@@ -6333,8 +6333,8 @@ def read_frees_subset(indir, outdir, database_file, go_dir, get_dn_ds, time_tree
     for species in species_list:
         outfile = open("%s/%s_free_dnds.txt" % (outdir, species), 'w')
         dnds_list = []
-        for og in og_dnds_dic.keys():
-            if species in og_dnds_dic[og].keys():
+        for og in list(og_dnds_dic.keys()):
+            if species in list(og_dnds_dic[og].keys()):
                 outfile.write("%s\t%s\n" % (og, og_dnds_dic[og][species]))
                 dnds_list.append(og_dnds_dic[og][species])
             else:
@@ -6349,8 +6349,8 @@ def read_frees_subset(indir, outdir, database_file, go_dir, get_dn_ds, time_tree
             ds_list = []
             dnfile = open("%s/%s_free_dn.txt" % (outdir, species), 'w')
             dsfile = open("%s/%s_free_ds.txt" % (outdir, species), 'w')
-            for og in og_dn_dic.keys():
-                if species in og_dn_dic[og].keys():
+            for og in list(og_dn_dic.keys()):
+                if species in list(og_dn_dic[og].keys()):
                     if og_dn_dic[og][species] < 1:
                         dnfile.write("%s\t%s\n" % (og, og_dn_dic[og][species]))
                         dn_list.append(og_dn_dic[og][species])
@@ -6374,14 +6374,14 @@ def read_frees_subset(indir, outdir, database_file, go_dir, get_dn_ds, time_tree
     soc_list = []
     sol_list = []
     background_ogs = []
-    for og in og_dnds_dic.keys():
+    for og in list(og_dnds_dic.keys()):
         if og not in og_list:
             continue
         sol_larger = True
         soc_larger = True
         background_og = True
-        for soc, sol in soc_sol_pairs.items():
-            if soc in og_dnds_dic[og].keys() and sol in og_dnds_dic[og].keys():
+        for soc, sol in list(soc_sol_pairs.items()):
+            if soc in list(og_dnds_dic[og].keys()) and sol in list(og_dnds_dic[og].keys()):
                 if og_dnds_dic[og][soc] <= og_dnds_dic[og][sol]:
                     soc_larger = False
                 if og_dnds_dic[og][sol] <= og_dnds_dic[og][soc]:
@@ -6398,7 +6398,7 @@ def read_frees_subset(indir, outdir, database_file, go_dir, get_dn_ds, time_tree
             sol_list.append(og)
         if background_og:
             background_ogs.append(og)
-    print len(background_ogs)
+    print(len(background_ogs))
     soc_larger_file.close()
     sol_larger_file.close()
 #    run_termfinder(soc_list, background_ogs, database_file, ortho_dic, "%s_soc" % go_dir)
@@ -6412,12 +6412,12 @@ def gc_content(og_list, indir, outdir):
         reader = SeqIO.parse("%s/og_cds_%s.afa-gb" % (indir, cur_og), format = 'fasta')
         for rec in reader:
             cur_sample = rec.id[0:4]
-            if cur_sample not in gc_count_dic.keys():
+            if cur_sample not in list(gc_count_dic.keys()):
                 gc_count_dic[cur_sample] = 0.0
                 len_dic[cur_sample] = 0.0
             gc_count_dic[cur_sample] += str(rec.seq).count("G") + str(rec.seq).count("C")
             len_dic[cur_sample] += len(rec.seq)
     outfile = open("%s/mean_gc.txt" % outdir, 'w')
-    for species, gc_count in gc_count_dic.items():
+    for species, gc_count in list(gc_count_dic.items()):
         outfile.write("%s\t%s\n" % (species, gc_count / len_dic[species]))
     outfile.close()

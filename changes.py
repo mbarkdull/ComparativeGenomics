@@ -22,7 +22,7 @@ def potential_changes_dict():
 
 
     # Mutate (substitutions) all possible codons in the given genetic code, and count proportions of mutations that are synonymous and non-synonmyous
-    for codon in nt_to_aa.keys():
+    for codon in list(nt_to_aa.keys()):
 
         # assert (codon not in codon_record)  @DONE: no duplicate entries
         # codon_record.append(codon)  

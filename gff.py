@@ -53,7 +53,7 @@ class gffParser:
             attributes = {x.split('=')[0] : x.split('=')[1] for x in attributes if '=' in x}
             if not(sequence_name in self.data):self.data[sequence_name] = []
             alpha = {'source':source, 'feature':feature, 'start':start, 'end':end, 'score':score, 'strand':strand, 'frame':frame}
-            for k,v in attributes.iteritems(): alpha[k] = v
+            for k,v in attributes.items(): alpha[k] = v
             self.data[sequence_name].append(alpha)
 
     

@@ -52,20 +52,20 @@ def jarvis_mask(infile, jarvis_out, outfile, len_min):
     seq_dic = {}
     for rec in reader:
         seq_dic[rec.id] = list(str(rec.seq))
-    for seq_name, mask in filter_coords.items():
+    for seq_name, mask in list(filter_coords.items()):
         seq_dic[seq_name][mask[0] : mask[1]] = "N"*(mask[1]-mask[0])
     outdic = {}
-    for k, v in seq_dic.items():
+    for k, v in list(seq_dic.items()):
 #        if len(v) - (v.count("N") + v.count("-")) >= len_min:
         outdic[k] = "".join(v)
     outfile = open(outfile, 'w')
-    for k, v in outdic.items():
+    for k, v in list(outdic.items()):
         outfile.write(">%s\n%s\n" % (k, v))
     outfile.close()
 
 def jarvis_filter_worker(param_list): #infile, outfile, window, step, maxGapContent, matrixAA):
     infile = param_list[0]
-    print infile.split("_")[-1][0:-4]
+    print(infile.split("_")[-1][0:-4])
     outfile = param_list[1]
     window = param_list[2]
     step = param_list[3]
@@ -104,7 +104,7 @@ def jarvis_filter_worker(param_list): #infile, outfile, window, step, maxGapCont
                 result=1+2.21*P+0.36*Z62+1.32*Z+0.06*D+(-1.5)*D*P+(-0.70)*Z*P+(-0.10)*Z*Z62                
                 if result > 0: # it's WRONG or at least very divergent according to the alignment
                     
-                    if not wrong.has_key(name):
+                    if name not in wrong:
                         wrong[name]=[]
                 
                     if len(wrong[name])>0:
@@ -180,7 +180,7 @@ def getAveProbPerWindowPerSeq(align, pGaps):
             species=name.id
             currentAA=name.seq[i]
             siteProb=aaFreqsDict[currentAA]
-            if not currentWindowSpeciesProbs.has_key(species):
+            if species not in currentWindowSpeciesProbs:
                 currentWindowSpeciesProbs[species]=[]        
                 
 #            if siteProb!="NA":#
@@ -222,7 +222,7 @@ def getAveProbPerWindowPerSeq(align, pGaps):
         else:
             Z="NA"
             
-        if not scorePerSpeciesPerWindow.has_key(species):
+        if species not in scorePerSpeciesPerWindow:
             scorePerSpeciesPerWindow[species]=[]
             
         score=[probSpecies,Z]
@@ -293,7 +293,7 @@ def getPairwiseScore(windowAlign, matrixAA):
 
     for name in allSeqs:
         allScores=[]
-        others=allSeqs.keys()
+        others=list(allSeqs.keys())
         others.remove(name)
         
         for alt in others:
@@ -313,7 +313,7 @@ def getPairwiseScore(windowAlign, matrixAA):
     stdevWindow=array(forAverage).std()
         
     for species in allSeqs:
-        if scoreSlice.has_key(species):
+        if species in scoreSlice:
             score=round(scoreSlice[species][0], 2)
             
             if not stdevWindow<0.001: #very conserved window
@@ -351,7 +351,7 @@ def extractSeqs(fileLocation, alnName, listSpecies):
         info=align.readline()
         
     for name in listSpecies:
-        if ids.has_key(name):
+        if name in ids:
             seqs.pop(ids[name])
             
     out1=open("%s_clean.temp"%(alnName), "w")
@@ -372,7 +372,7 @@ def getColumnDistScoreToClosest(windowAlign, matrixAA):
 
     for name in allSeqs:
         seq1=allSeqs[name]
-        others=allSeqs.keys()
+        others=list(allSeqs.keys())
         others.remove(name)
         windowScore=[]
         
@@ -404,7 +404,7 @@ def getColumnDistScoreToClosest(windowAlign, matrixAA):
     stdevWindow=array(allScores).std()
     
     for species in allSeqs:
-        if scoreSlice.has_key(species):
+        if species in scoreSlice:
             score=scoreSlice[species][0]
             
             if not stdevWindow<0.001: #very conserved window

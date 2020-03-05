@@ -28,11 +28,11 @@ class NCAR:
         neighbor_names = []
         for neigh in self.neighbors:
             neighbor_names.append(neigh)
-        return "Name: %s\nScaffold: %s\nStart coord: %s\nEnd coord: %s\nPoly coords: %s\nPoly count: %s\nAverage #genotypes: %s\nNeighboring genes: %s" % (self.name, self.scaf, self.start, self.end, self.alts.keys(), self.poly_count, self.average_n, ",".join(neighbor_names))
+        return "Name: %s\nScaffold: %s\nStart coord: %s\nEnd coord: %s\nPoly coords: %s\nPoly count: %s\nAverage #genotypes: %s\nNeighboring genes: %s" % (self.name, self.scaf, self.start, self.end, list(self.alts.keys()), self.poly_count, self.average_n, ",".join(neighbor_names))
 
     def potential_poly_sites(self):
         potent_count = 0
-        for count in self.called_counts.values():
+        for count in list(self.called_counts.values()):
             if count >= 4:
                 potent_count += 1
         return potent_count
@@ -58,11 +58,11 @@ class NCAR:
 
     def aligned_alts(self, aligned_seq, start_coord):
         region_alt_dic = {}
-        for k in self.alts.keys():
+        for k in list(self.alts.keys()):
             if k >= start_coord and k < start_coord + len(aligned_seq) - aligned_seq.count("-"):
                 region_alt_dic[k-start_coord] = self.alts[k]
         aligned_vars = {}
-        for k in region_alt_dic.keys():
+        for k in list(region_alt_dic.keys()):
             new_coord = self.get_new_coord(aligned_seq, k)
             if self.strand == 1:
                 aligned_vars[new_coord] = region_alt_dic[k]
@@ -147,13 +147,13 @@ class NCAR:
         #a dictionary where the indices have been adjusted to represent
         #the positions in the alignment
         region_alt_dic = {}
-        for k in self.alts.keys():
+        for k in list(self.alts.keys()):
             for cds_tuple in self.cds_coords:
                 if k >= cds_tuple[0] and k < cds_tuple[1]:
                     region_alt_dic[k] = self.alts[k]
         aligned_vars = {}
         zeroed_tuples = self.zeroed_tuples(self.cds_coords)
-        for k in region_alt_dic.keys():
+        for k in list(region_alt_dic.keys()):
             old_coord = k
             new_coord = self.new_coding_coord(aligned_seq, self.cds_coords, zeroed_tuples, old_coord)
             if self.strand == 1:
@@ -169,12 +169,12 @@ class NCAR:
         #the positions in the alignment
         region_alt_dic = {}
         ncar_tuple = (self.start, self.end)
-        for k in self.alts.keys():
+        for k in list(self.alts.keys()):
             if k >= ncar_tuple[0] and k < ncar_tuple[1]:
                 region_alt_dic[k] = self.alts[k]
         aligned_vars = {}
         zeroed_tuples = self.zeroed_tuples([ncar_tuple])
-        for k in region_alt_dic.keys():
+        for k in list(region_alt_dic.keys()):
             old_coord = k
             new_coord = self.new_coding_coord(aligned_seq, [ncar_tuple], zeroed_tuples, old_coord)
             if self.strand == 1:
@@ -231,7 +231,7 @@ class NCAR:
         return self.average_n
         size_sum = 0
         num_sites = 0
-        for site in target_dic.keys():
+        for site in list(target_dic.keys()):
             num_sites += 1
             size_sum += self.called_counts[site]
         if num_sites == 0:
@@ -247,7 +247,7 @@ class NCAR:
         try:
             reader = vcf_reader.fetch(self.scaf, self.start, self.end)
         except ValueError:
-            print "can't get that bit of vcf: %s" % self.name
+            print("can't get that bit of vcf: %s" % self.name)
             self.alts = {}
             self.refs = {}
             self.called_counts = {}
@@ -286,7 +286,7 @@ class NCAR:
 
         #if you need exact counts of sample numbers, use this
 #        self.called_counts = called_count
-        if len(called_count.values()) == 0:
+        if len(list(called_count.values())) == 0:
             self.average_n = 0
 #        elif "LALB" in self.name:
 #            self.average_n = round(1.0 * sum(called_count.values()) / len(called_count.values()))
@@ -298,5 +298,5 @@ class NCAR:
         #reduce memory usage
         self.refs = {}
         self.poly_count = len(self.alts)
-        self.poly_coords = self.alts.keys()
+        self.poly_coords = list(self.alts.keys())
         self.called_counts = called_count

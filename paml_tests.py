@@ -6,7 +6,7 @@ import subprocess
 import os
 
 def branch_site_d_worker(orthogroup, workingdir):
-    print orthogroup
+    print(orthogroup)
     template = open("/Genomics/kocherlab/berubin/annotation/orthology/codeml.CladeD.ctl", 'rU')
     os.chdir(workingdir)
     if not os.path.isdir("og_%s_working" % orthogroup):
@@ -99,8 +99,8 @@ def free_ratios_worker(param_list):
 def ancestor_reconstruction(param_list):
     orthogroup = param_list[0]
     workingdir = param_list[1]
-    print workingdir
-    print orthogroup
+    print(workingdir)
+    print(orthogroup)
 
     cml = codeml.Codeml(alignment = "%s/og_cds_%s.afa" % (workingdir, orthogroup), tree = "%s/og_%s.tree" % (workingdir, orthogroup), out_file = "%s/og_%s.anc" % (workingdir, orthogroup), working_dir = "%s/og_%s_working" % (workingdir, orthogroup))
     cml.set_options(runmode=0,fix_blength=0,seqtype=1,CodonFreq=2, model=0, icode=0, clock = 0, aaDist=0, Mgene = 0, fix_kappa = 0, kappa = 2, fix_omega = 0, omega = 1, getSE = 0, RateAncestor = 1, cleandata = 0, Small_Diff = .45e-6, verbose = True)
@@ -111,14 +111,14 @@ def ancestor_reconstruction(param_list):
 def ncar_ancestor_reconstruction(param_list):
     orthogroup = param_list[0]
     workingdir = param_list[1]
-    print workingdir
-    print orthogroup
+    print(workingdir)
+    print(orthogroup)
     cml = baseml.Baseml(alignment = "%s/ncar_%s.afa" % (workingdir, orthogroup), tree = "%s/og_%s.tree" % (workingdir, orthogroup), out_file = "%s/ncar_%s.anc" % (workingdir, orthogroup), working_dir = "%s/ncar_%s_working" % (workingdir, orthogroup))
     cml.set_options(runmode=0,fix_blength=0, model=7, clock = 0, Mgene = 0, fix_kappa = 0, kappa = 2, getSE = 0, RateAncestor = 1, cleandata = 0, Small_Diff = .45e-6, verbose = True)
     try:
         cml.run(command = "/Genomics/kocherlab/berubin/local/src/paml4.9e/bin/baseml", verbose = True)
     except:
-        print "%s failed to infer ancestor" % orthogroup
+        print("%s failed to infer ancestor" % orthogroup)
 
 def pairwise_yn(orthogroup, workingdir):
     yn = yn00.Yn00(alignment = "%s/og_cds_%s.afa" % (workingdir, orthogroup), out_file = "%s/og_%s.nul" % (workingdir, orthogroup), working_dir = "%s/og_%s_working" % (workingdir, orthogroup))
