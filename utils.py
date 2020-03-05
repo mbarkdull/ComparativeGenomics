@@ -28,7 +28,7 @@ from Bio.Phylo.PAML import codeml
 import ete3
 from ete3 import PhyloTree
 from Bio.Phylo.PAML.chi2 import cdf_chi2
-from scipy.stats import chisqprob
+from scipy.stats import chi2
 import statsmodels.stats.multitest as smm # this is required for a lot of stuff but is taking forever to load
 from Bio.SeqRecord import SeqRecord
 from Bio import AlignIO
