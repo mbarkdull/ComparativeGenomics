@@ -130,10 +130,9 @@ def aaml_worker(param_list):
     orthogroup = param_list[0]
     workingdir = param_list[1]
     cml = codeml.Codeml(alignment = "%s/og_cds_%s.afa" % (workingdir, orthogroup), tree = "%s/og_%s.tree" % (workingdir, orthogroup), out_file = "%s/og_%s.alt" % (workingdir, orthogroup), working_dir = "%s/og_%s_working" % (workingdir, orthogroup))
-    # Fix this so that jones.dat is not hard-coded:
-    cml.set_options(runmode=0,fix_blength=0,seqtype=2,model=3, icode=0, clock = 0, aaDist=0, Mgene = 0, fix_kappa = 0, kappa = 2, fix_omega = 0, omega = 1, getSE = 0, RateAncestor = 0, cleandata = 0, Small_Diff = .45e-6, aaRatefile = "/Genomics/kocherlab/berubin/local/src/paml4.9e/dat/jones.dat", verbose = True)
+    cml.set_options(runmode=0,fix_blength=0,seqtype=2,model=3, icode=0, clock = 0, aaDist=0, Mgene = 0, fix_kappa = 0, kappa = 2, fix_omega = 0, omega = 1, getSE = 0, RateAncestor = 0, cleandata = 0, Small_Diff = .45e-6, aaRatefile = "jones.dat", verbose = True)
     cml.set_options(NSsites=[0])
-    cml.run(command = "/Genomics/kocherlab/berubin/local/src/paml4.9e/bin/codeml", verbose = True)
+    cml.run(command = "codeml", verbose = True)
 
 def encprime(gene_name, cds_seq, flank_seq, outdir):
     if not os.path.isdir("%s/%s" % (outdir, gene_name)):

@@ -1448,8 +1448,7 @@ def fsa_pairwise_diff_count(seq1, seq2, inspecies, outspecies, og_num, in_gene, 
     outtuple = (1, len(seq2))
 
     seqfile.close()
-    # Change this so it is not hard-coded.
-    cmd = ["/Genomics/kocherlab/berubin/local/src/fsa-1.15.9/bin/fsa", "%s/fsa_files_%s/%s_%s/OG_%s_%s_%s.fa" % (out_path, seq_type, inspecies, outspecies, og_num, inspecies, outspecies)]
+    cmd = ["fsa", "%s/fsa_files_%s/%s_%s/OG_%s_%s_%s.fa" % (out_path, seq_type, inspecies, outspecies, og_num, inspecies, outspecies)]
     FNULL = open(os.devnull, 'w')
     with open("%s/fsa_files_%s/%s_%s/OG_%s_%s_%s.afa" % (out_path, seq_type, inspecies, outspecies, og_num, inspecies, outspecies), 'w') as outfile:
         subprocess.call(cmd, stdout = outfile, stderr = FNULL)
@@ -3982,14 +3981,12 @@ def prank_align_worker(og_file, outdir, use_backbone, phylogeny_file):
 
 def gblock(inalignment):
     #run gblocks on given file
-    # Change this so it is not hard-coded.
-    cmd = ["/Genomics/kocherlab/berubin/local/src/Gblocks_0.91b/Gblocks", inalignment, "-t=c", "-b5=h"]
+    cmd = ["Gblocks", inalignment, "-t=c", "-b5=h"]
     subprocess.call(cmd)
 
 def trimal_automated(inalignment, outalignment):
     #run trimAl on given file
-    # Change this so it is not hard-coded:
-    cmd = ["/Genomics/kocherlab/berubin/local/src/trimal/source/trimal", "-automated1", "-in", inalignment, "-out", outalignment]
+    cmd = ["trimal", "-automated1", "-in", inalignment, "-out", outalignment]
     subprocess.call(cmd)
 
 def prank_align(og_list, indir, outdir, use_backbone, phylogeny_file, num_threads): 
@@ -4085,11 +4082,9 @@ def fsa_align_worker(param_list):
     seqs_formatted.close()
     
     if iscoding:
-    # Change this so it is not hard-coded:
-        cmd = ["/Genomics/kocherlab/berubin/local/src/fsa-1.15.9/bin/fsa", "--nucprot", "%s" % form_og_file]
-    # Change this so it is not hard-coded:
+        cmd = ["fsa", "--nucprot", "%s" % form_og_file]
     else:
-        cmd = ["/Genomics/kocherlab/berubin/local/src/fsa-1.15.9/bin/fsa", "%s" % form_og_file]
+        cmd = ["fsa", "%s" % form_og_file]
     FNULL = open(os.devnull, 'w')
     if iscoding:
         with open("%s/og_cds_%s.afa" % (outdir, og_num), 'w') as outfile:
@@ -4228,8 +4223,7 @@ def alignment_column_filtering_worker(param_list):#infile, outfile, cur_og, noga
 
 def gblock(inalignment):
     #run gblocks on given file
-    #Change this so it is not hard-coded:
-    cmd = ["/Genomics/kocherlab/berubin/local/src/Gblocks_0.91b/Gblocks", inalignment, "-t=c", "-b5=h"]
+    cmd = ["Gblocks", inalignment, "-t=c", "-b5=h"]
     subprocess.call(cmd)
 
 
