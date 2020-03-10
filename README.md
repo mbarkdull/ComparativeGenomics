@@ -19,6 +19,9 @@ Note that this workflow must be run from the beginning; even if you
 **only** want to convert Orthofinder outputs to RERconverge inputs, all
 steps depend on the output of steps before them.
 
+Everything here was tested under **Python 3.7.4**, which can be found
+[here](https://www.python.org/downloads/release/python-374/).
+
 ### Getting Started:
 
 Download this repository into your working directory.
