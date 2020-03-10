@@ -24,7 +24,10 @@ Everything here was tested under **Python 3.7.4**, which can be found
 
 ### Getting Started:
 
-Download this repository into your working directory.
+Clone this repository into your working directory. For example, from the
+command line:
+
+    git clone https://github.com/mbarkdull/ComparativeGenomics.git
 
 Make sure you have the required inputs. To begin using this workflow,
 you will need:
