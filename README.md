@@ -4,8 +4,8 @@ Megan Barkdull
 
 ## Changes from Ben Rubin’s Comparative Genomics Pipeline
 
-This set of scripts is a slightly modified version of [Ben Rubin’s
-Comparative Genomics
+This set of scripts is a **work-in-progress**, slightly modified version
+of [Ben Rubin’s Comparative Genomics
 Pipeline](https://github.com/berrubin/ComparativeGenomics). I have:
 
   - Reformatted all python scripts to be compatible with python3.
@@ -106,9 +106,9 @@ the coding sequence file for each of your taxa, as described under
 
 This command creates:
 
-  - A directory `./[output directory]/[output_prefix]_orthos`, which
+  - A directory `./[output directory]/[output_prefix]_orthos/`, which
     contains fasta files of the coding sequence for every orthogroup.
-  - A directory `./[output directory]/[output_prefix]_orthos_prots`,
+  - A directory `./[output directory]/[output_prefix]_orthos_prots/`,
     which contains fasta files of the translated amino acid sequence for
     every orthogroup.
   - An index file, `[output_prefix]_ortho.index`, which lists the number
@@ -157,10 +157,10 @@ the coding sequence file for each of your taxa, as described under
 
 This command creates:
 
-  - A directory, `./[output directory]/[output_prefix]_fsa_coding`, that
-    contains unaligned (\*.fa) and aligned (\*.afa) fasta files for each
-    orthogroup.
-  - a file, `[output_prefix].afa`, containing an aligned, concatenated
+  - A directory, `./[output directory]/[output_prefix]_fsa_coding/`,
+    that contains unaligned (\*.fa) and aligned (\*.afa) fasta files for
+    each orthogroup.
+  - a file, `[output_prefix].afa/`, containing an aligned, concatenated
     matrix of all proteins from all orthogroups with a single sequence
     per species.
       - The protein sequences are from the
@@ -258,15 +258,15 @@ filtering, and is used in filtering step 8.
 This command creates:
 
   - A directory, `./[output
-    directory]/[output_prefix]_fsa_coding_columnfilt`, that contains the
-    aligned fasta files produced by the first three filtering steps.
-  - A directory, `./[output directory]/[output_prefix]_coding_jarvis`,
+    directory]/[output_prefix]_fsa_coding_columnfilt/`, that contains
+    the aligned fasta files produced by the first three filtering steps.
+  - A directory, `./[output directory]/[output_prefix]_coding_jarvis/`,
     that contains the masked output from filtering step 4.
   - A directory, `./[output
-    directory]/[output_prefix]_coding_jarvis_columnfilt`, containing the
-    masked, column-filtered output from step 5.
+    directory]/[output_prefix]_coding_jarvis_columnfilt/`, containing
+    the masked, column-filtered output from step 5.
   - A directory, `./[output
-    directory]/[output_prefix]_coding_jarvis_columnfilt_seqfilt`,
+    directory]/[output_prefix]_coding_jarvis_columnfilt_seqfilt/`,
     containing the outputs from filtering steps 6-8.
 
 ### 4\. Compiling Data for RERconverge
@@ -313,3 +313,13 @@ ReadMe](https://github.com/berrubin/ComparativeGenomics) for details.
 outputs of Orthofinder, so you can go ahead and use that.
 
 #### What are the outputs?
+
+This command creates:
+
+  - A directory, `./[output directory]/aaml_compiled/`, which contains
+    your output file, `[output file name]`.
+      - This file has locus names in the first column and a species tree
+        with branch lengths representing protein divergence at that
+        locus in the second column.
+
+The output file can be passed directly to RERconverge.
