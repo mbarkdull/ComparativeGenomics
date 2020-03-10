@@ -47,8 +47,8 @@ the gene names in the coding sequence fasta files.
 
 #### Potential problems:
 
-This step of the workflow relies on several tools which you may need to
-install, and which then may need to be [added to your path
+This workflow relies on several tools which you may need to install, and
+which then may need to be [added to your path
 variable](https://superuser.com/questions/284342/what-are-path-and-other-environment-variables-and-how-can-i-set-or-use-them),
 including:
 
