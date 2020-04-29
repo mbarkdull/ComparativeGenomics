@@ -15,7 +15,7 @@ def jarvis_filter(og_list, indir, outdir, len_min, num_threads):
     window=12
     step=1
     maxGapContent=0.6
-    aaMatrix="/Genomics/kocherlab/berubin/local/developing/selection_pipeline/blosum62.txt"
+    aaMatrix="/Users/meganbarkdull/R/Genomics/226Test/blosum62.txt"
     pool = multiprocessing.Pool(processes = num_threads)
 
     matrixAA=readMatrix(aaMatrix)
@@ -65,7 +65,7 @@ def jarvis_mask(infile, jarvis_out, outfile, len_min):
 
 def jarvis_filter_worker(param_list): #infile, outfile, window, step, maxGapContent, matrixAA):
     infile = param_list[0]
-    print(infile.split("_")[-1][0:-4])
+    print((infile.split("_")[-1][0:-4]))
     outfile = param_list[1]
     window = param_list[2]
     step = param_list[3]
@@ -206,7 +206,7 @@ def getAveProbPerWindowPerSeq(align, pGaps):
             aveWindowSpeciesProbs[species]="NA"
             
     # calculate Z-score
-    if allAveWindow>0: #not a gap-only window
+    if len(allAveWindow)>0: #not a gap-only window
         aveWindow=array(allAveWindow).mean()
         stdevWindow=array(allAveWindow).std()
         
