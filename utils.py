@@ -5747,7 +5747,7 @@ def goatools_termfinder(forelist, backlist, database_file, go_dir):
     for og_num in backlist:
         back_file.write("OG_%s\n" % (og_num))
     back_file.close()
-    cmd = ["/Genomics/kocherlab/berubin/local/src/goatools/goatools/scripts/find_enrichment.py", "%s/forelist.txt" % go_dir, "%s/backlist.txt" % go_dir, database_file, "--obo", "/Genomics/kocherlab/berubin/local/src/goatools/goatools/scripts/go-basic.obo", "--pval", "10", "--outfile", "%s_ps.txt" % (go_dir)]
+    cmd = ["./goatools/goatools/scripts/find_enrichment.py", "%s/forelist.txt" % go_dir, "%s/backlist.txt" % go_dir, database_file, "--obo", "./goatools/goatools/scripts/go-basic.obo", "--pval", "10", "--outfile", "%s_ps.txt" % (go_dir)]
     subprocess.call(cmd)
     reader = open("%s_ps.txt" % (go_dir), 'rU')
     p_dic = {}

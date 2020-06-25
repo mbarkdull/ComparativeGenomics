@@ -15,7 +15,7 @@ def jarvis_filter(og_list, indir, outdir, len_min, num_threads):
     window=12
     step=1
     maxGapContent=0.6
-    aaMatrix="/Users/meganbarkdull/R/Genomics/226Test/blosum62.txt"
+    aaMatrix="./blosum62.txt"
     pool = multiprocessing.Pool(processes = num_threads)
 
     matrixAA=readMatrix(aaMatrix)
